@@ -98,90 +98,90 @@
             [a a])])
     (unless (empty? next)
       (match next
-[(list 'pop) 0]
-[(list 'ldval x)    (flatten (list 1 (get-int-bytes(check-string x))))]
-[(list 'ldvals x)    (flatten (list 2 (get-int-bytes(check-string x))))]
-[(list 'ldvalb x)    (flatten (list 3 (get-int-bytes(check-string x))))]
-[(list 'ldvar x)    (flatten (list 4 (get-int-bytes(check-string x))))]
-[(list 'stvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
-[(list 'p_stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
-[(list 'ldprop) 7]
-[(list 'stprop) 8]
-[(list 'p_stprop) 9]
-[(list 'hasprop) 10]
-[(list 'p_hasprop) 11]
-[(list 'add) 12]
-[(list 'sub) 13]
-[(list 'mul) 14]
-[(list 'div) 15]
-[(list 'mod) 16]
-[(list 'rndi) 17]
-[(list 'concat) 18]
-[(list 'cstr) 19]
-[(list 'cint) 20]
-[(list 'ceq) 21]
-[(list 'cne) 22]
-[(list 'cgt) 23]
-[(list 'clt) 24]
-[(list 'beq x)    (flatten (list 25 (get-int-bytes(check-string x))))]
-[(list 'bne x)    (flatten (list 26 (get-int-bytes(check-string x))))]
-[(list 'bgt x)    (flatten (list 27 (get-int-bytes(check-string x))))]
-[(list 'blt x)    (flatten (list 28 (get-int-bytes(check-string x))))]
-[(list 'branch x)    (flatten (list 29 (get-int-bytes(check-string x))))]
-[(list 'createobj) 30]
-[(list 'cloneobj) 31]
-[(list 'getobj) 32]
-[(list 'delprop) 33]
-[(list 'p_delprop) 34]
-[(list 'delobj) 35]
-[(list 'moveobj) 36]
-[(list 'p_moveobj) 37]
-[(list 'createlist) 38]
-[(list 'appendlist) 39]
-[(list 'p_appendlist) 40]
-[(list 'removelist) 41]
-[(list 'p_removelist) 42]
-[(list 'len) 43]
-[(list 'p_len) 44]
-[(list 'index) 45]
-[(list 'p_index) 46]
-[(list 'keys) 47]
-[(list 'values) 48]
-[(list 'getloc) 49]
-[(list 'genloc) 50]
-[(list 'genlocref) 51]
-[(list 'setlocsibling) 52]
-[(list 'p_setlocsibling) 53]
-[(list 'setlocchild) 54]
-[(list 'p_setlocchild) 55]
-[(list 'setlocparent) 56]
-[(list 'p_setlocparent) 57]
-[(list 'getlocsiblings) 58]
-[(list 'p_getlocsiblings) 59]
-[(list 'getlocchildren) 60]
-[(list 'p_getlocchildren) 61]
-[(list 'getlocparent) 62]
-[(list 'p_getlocparent) 63]
-[(list 'setvis) 64]
-[(list 'p_setvis) 65]
-[(list 'adduni) 66]
-[(list 'deluni) 67]
-[(list 'roll) 68]
-[(list 'deal) 69]
-[(list 'shuffle) 70]
-[(list 'merge) 71]
-[(list 'sort) 72]
-[(list 'genreq) 73]
-[(list 'addaction) 74]
-[(list 'p_addaction) 75]
-[(list 'suspend) 76]
-[(list 'suspendu) 77]
-[(list 'fallback) 78]
-[(list 'say) 79]
-[(list 'call x)    (flatten (list 80 (get-int-bytes(check-string x))))]
-[(list 'ret) 81]
-[(list 'dbg) 82]
-[(list 'dbgl) 83]
+        [(list 'pop) 0]
+        [(list 'ldval x)    (flatten (list 1 (get-int-bytes(check-string x))))]
+        [(list 'ldvals x)    (flatten (list 2 (get-int-bytes(check-string x))))]
+        [(list 'ldvalb x)    (flatten (list 3 (get-int-bytes(check-string x))))]
+        [(list 'ldvar x)    (flatten (list 4 (get-int-bytes(check-string x))))]
+        [(list 'stvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
+        [(list 'p_stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
+        [(list 'ldprop) 7]
+        [(list 'stprop) 8]
+        [(list 'p_stprop) 9]
+        [(list 'hasprop) 10]
+        [(list 'p_hasprop) 11]
+        [(list 'add) 12]
+        [(list 'sub) 13]
+        [(list 'mul) 14]
+        [(list 'div) 15]
+        [(list 'mod) 16]
+        [(list 'rndi) 17]
+        [(list 'concat) 18]
+        [(list 'cstr) 19]
+        [(list 'cint) 20]
+        [(list 'ceq) 21]
+        [(list 'cne) 22]
+        [(list 'cgt) 23]
+        [(list 'clt) 24]
+        [(list 'beq x)    (flatten (list 25 (get-int-bytes(check-string x))))]
+        [(list 'bne x)    (flatten (list 26 (get-int-bytes(check-string x))))]
+        [(list 'bgt x)    (flatten (list 27 (get-int-bytes(check-string x))))]
+        [(list 'blt x)    (flatten (list 28 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 29 (get-int-bytes(check-string x))))]
+        [(list 'createobj) 30]
+        [(list 'cloneobj) 31]
+        [(list 'getobj) 32]
+        [(list 'delprop) 33]
+        [(list 'p_delprop) 34]
+        [(list 'delobj) 35]
+        [(list 'moveobj) 36]
+        [(list 'p_moveobj) 37]
+        [(list 'createlist) 38]
+        [(list 'appendlist) 39]
+        [(list 'p_appendlist) 40]
+        [(list 'removelist) 41]
+        [(list 'p_removelist) 42]
+        [(list 'len) 43]
+        [(list 'p_len) 44]
+        [(list 'index) 45]
+        [(list 'p_index) 46]
+        [(list 'keys) 47]
+        [(list 'values) 48]
+        [(list 'getloc) 49]
+        [(list 'genloc) 50]
+        [(list 'genlocref) 51]
+        [(list 'setlocsibling) 52]
+        [(list 'p_setlocsibling) 53]
+        [(list 'setlocchild) 54]
+        [(list 'p_setlocchild) 55]
+        [(list 'setlocparent) 56]
+        [(list 'p_setlocparent) 57]
+        [(list 'getlocsiblings) 58]
+        [(list 'p_getlocsiblings) 59]
+        [(list 'getlocchildren) 60]
+        [(list 'p_getlocchildren) 61]
+        [(list 'getlocparent) 62]
+        [(list 'p_getlocparent) 63]
+        [(list 'setvis) 64]
+        [(list 'p_setvis) 65]
+        [(list 'adduni) 66]
+        [(list 'deluni) 67]
+        [(list 'roll) 68]
+        [(list 'deal) 69]
+        [(list 'shuffle) 70]
+        [(list 'merge) 71]
+        [(list 'sort) 72]
+        [(list 'genreq) 73]
+        [(list 'addaction) 74]
+        [(list 'p_addaction) 75]
+        [(list 'suspend) 76]
+        [(list 'suspendu) 77]
+        [(list 'fallback) 78]
+        [(list 'say) 79]
+        [(list 'call x)    (flatten (list 80 (get-int-bytes(check-string x))))]
+        [(list 'ret) 81]
+        [(list 'dbg) 82]
+        [(list 'dbgl) 83]
         ))))
 
 (define (assemble opcodes)
@@ -283,11 +283,16 @@
     [(_ (var list-expr) exprs ...)
      (with-syntax*
        ([label (new-label)]
+        [continue (new-label)]
         [id (symbol->string (syntax-e #'var))]
         [idx (new-var)]
         [start
          #'`(
              ,(eval-arg list-expr)
+             ;test there are items otherwise skip
+             (p_len)
+             (ldval 0)
+             (beq continue)
              (ldval 0)
              (stvar idx)
              (label ldvar idx)
@@ -297,14 +302,16 @@
         [end
          #'`(
              (p_len)
-             (ldval 1)  ; todo: swap this around and use less than
-             (add)
+             ;; (ldval 2)  ; todo: swap this around and use less than
+             ;; (add)
              (ldval 1)  ; increase  loop index
              (ldvar idx)
              (add)
              (p_stvar idx)
              (bne label)
-             (pop))])
+             (continue)
+             (pop)
+             )])
        #'(append start (append exprs ...) end))]))
      
 (define-syntax (get-prop stx)
@@ -324,12 +331,10 @@
 (define-syntax (set-prop stx)
   (syntax-parse stx
     [(_ obj key val)
-     (with-syntax*
-       ([id (symbol->string (syntax-e #'obj))])
-       #'`(,(eval-arg obj)
-           ,(eval-arg key)
-           ,(eval-arg val)
-           (stprop)))]))
+     #'`(,(eval-arg obj)
+         ,(eval-arg key)
+         ,(eval-arg val)
+         (stprop))]))
 
 (define-syntax (set-props stx)
   (syntax-parse stx
@@ -390,7 +395,6 @@
            ((stvar ,(var-name args)) ...)
            ,body ...
            (ret)))]
-    
     [(_ name expr)
      (with-syntax*
        ([id (symbol->string (syntax-e #'name))])
@@ -702,8 +706,12 @@
          ,(eval-arg min)
          (rndi))]))
 
+(define-syntax (s-begin stx)
+  (syntax-parse stx
+    [(_ exprs ...)
+     #'`( ,exprs ...)]))
+
 (scurry
-     
  (def (main)
    (def-list colours "green" "blue" "orange" "yellow" "white")
    (set-global "race-on" 1)
@@ -711,13 +719,15 @@
    (call (setup-players))
    ;create the camels
    (def-obj camels)
+   (def stack (get-prop (get-loc "track1") "camel-stack"))
    (foreach (c colours)
      (def-obj camel (["type" "camel"]
                      ["colour" c]))
      (move-obj camel (get-loc "track1"))
+     (append-list stack camel)
      ;assign the camel to a quick-lookup dict by colour
      (set-prop camels c camel))
-
+   (set-prop (get-loc "track1") "camel-stack" stack)
    (def camel-keys (keys camels))
    (while (get-global "race-on")
      (def i (rndi (list-len camel-keys)))
@@ -725,34 +735,63 @@
      (call (move-camel
             (get-prop camels (nth i camel-keys))
             spaces)))
+
+   ; race over
+   (foreach (c (vals camels))
+     (dbg "camel " (get-prop c "colour") " is at location " (get-loc c))
+     (dbgl ""))
    )
  
  
 
  (def (move-camel camel amount)
-   ;let's get those camels moving!
-;   (dbg (get-prop camel "colour")  " camel location : " (get-loc camel) "\n")
+   (dbg "move-camel " (get-prop camel "colour") " " amount "\n")
+   ; camels are stored in stack objects (lists) within a location
+   ; under the camel-stack key.  the camel should be located and
+   ; the stack split into two stacks - since the camels on top
+   ; of the target camel get moved with it.  the new stack gets
+   ; appended to the camel stack of the target location.
+
+   ; first, work out the target destination by navigating through the
+   ; "next" sibling of the locations.
+   (def current-loc (get-loc camel))
+   (def target-loc (get-loc camel))
    (def cnt 0)
    (while (lt cnt amount)
-     (def loc (get-loc camel))
-     ; we know there's only one sibling
-     (def sibs (get-siblings loc))
-     (def cnt2 0)
+     ;todo: replace this with a find macro/func of some kind
+     (def sibs (get-siblings target-loc))
+     (def cnt2 0) 
      (while (eq 0 (has-prop (nth cnt2 sibs) "next"))
        (def cnt2 (add 1 cnt2)))
-
      (def sib (nth cnt2 sibs))
-     
      (s-when (eq "finish" (get-prop sib "next"))
-             (dbg "race over!\n")
-             (dbg (get-prop camel "colour") "wins!!\n")
-             (set-global "race-on" 0))
+       (set-global "race-on" 0))
+     (def target-loc (get-loc sib))
+     (def cnt (add 1 cnt)))
 
-     ;move that camel!
-     (move-obj camel sib)
-     (dbg (get-prop camel "colour")  " camel location : " loc "\n")
-     (def cnt (add cnt 1))))
+   ; now we have the target location.
+   (dbg "current-loc is " current-loc "\n")
+   (dbg "target-loc is " target-loc "\n")
+   ; grab the camel stack from the current location and split it
+   ; such that the current camel and the rest of the list forms the new list
+   (def current-stack (get-prop current-loc "camel-stack"))
+   (def target-stack (get-prop target-loc "camel-stack"))
+   (def-list new-current-stack)
+   (def found-camel 0)
+   (foreach (c current-stack)
+     (s-when (eq c camel)
+       (def found-camel 1))     
+     (s-if (eq 1 found-camel)
+       (s-begin
+        (append-list target-stack c)
+        (dbg "moving " (get-prop c "colour") " to " target-loc "\n")
+        (move-obj c target-loc))
+       ;else 
+       (append-list new-current-stack c)))
 
+   ;assign new lists
+   (set-prop current-loc "camel-stack" new-current-stack)
+   (set-prop target-loc "camel-stack" target-stack))
  
  (def (init-locations)
    (def root-loc (create-location "root"))
@@ -760,17 +799,17 @@
    ;entire track location
    (ignore (create-location "track" root-loc))
    ;first segment
-   (ignore (create-location "track1" "track"))
+   (def track (create-location "track1" "track"))
+   (set-prop track "camel-stack" '(createlist))
    (def track-no 2)
    (while (lt track-no 17)
      ;create and link the next 15 sections
      (def curr-track (add "track" track-no))
      (def prev-track (add "track" (sub 1 track-no)))
-     (ignore (create-location curr-track "track"))
+     (def track (create-location curr-track "track"))
      (link-location curr-track prev-track (["prev" "prev"]))
      (link-location prev-track curr-track (["next" "next"]))
-     (def-list camel-stack)
-     (move-obj (create-obj (["camel-stack" camel-stack])) curr-track)
+     (set-prop track "camel-stack" '(createlist))
      (def track-no (add 1 track-no)))
    ;wrap around at end, mark as finish line!
    (link-location "track16" "track1" (["next" "finish"]))
@@ -800,9 +839,7 @@
      (set-prop tent "leg-cards" leg-cards)
      ;one pyramid card for each camel
      
-     )
-     
-   )
+     ))
    
  (def (setup-players)
    ; get player list
