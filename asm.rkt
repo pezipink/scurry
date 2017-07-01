@@ -24,9 +24,7 @@
     (let* ([n (unbox num2)]
            [v (format "var~a" n)])
       (set-box! num2 (+ n 1))
-      v))
-
-  )
+      v)))
 
 (define (new-string-index)
   (set-context-max-string! asm (+ 1 (context-max-string asm)))
@@ -128,7 +126,7 @@
         [(list 'bne x)    (flatten (list 26 (get-int-bytes(check-string x))))]
         [(list 'bgt x)    (flatten (list 27 (get-int-bytes(check-string x))))]
         [(list 'blt x)    (flatten (list 28 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 29 (get-int-bytes(check-string x))))]
+        [(list 'branch x) (flatten (list 29 (get-int-bytes(check-string x))))]
         [(list 'createobj) 30]
         [(list 'cloneobj) 31]
         [(list 'getobj) 32]
@@ -184,7 +182,6 @@
         [(list 'ret) 82]
         [(list 'dbg) 83]
         [(list 'dbgl) 84]
-
         ))))
 
 (define (assemble opcodes)
@@ -201,7 +198,6 @@
            [(not (void? code)) (write-vec-byte code v)]
            ))))))
 
-
 (define (write-file loc data)
   ;program
   (assemble data)
@@ -210,8 +206,7 @@
   (for ([targ (context-awaiting-labels asm)])
     (let ([source (cdr targ)]
           [dest (hash-ref (context-labels asm) (car targ))])
-      ;(wdb "label ~a source ~a dest ~a" targ source dest)
-
+      ;(wdb "label ~a source ~a dest ~a" targ source dest)      
       (for ([i (in-naturals)]
             [b (get-int-bytes (- dest source))])
         (vector-set!
@@ -305,8 +300,6 @@
         [end
          #'`(
              (p_len)
-             ;; (ldval 2)  ; todo: swap this around and use less than
-             ;; (add)
              (ldval 1)  ; increase  loop index
              (ldvar idx)
              (add)
@@ -404,7 +397,6 @@
      #'`( ;expr should calculate some value on the stack, or load a constant
          ,(eval-arg expr)
          (stvar id)))]))
-
 
 (define-syntax (new-list stx)
   (syntax-parse stx
@@ -636,7 +628,7 @@
             ,(eval-arg true-expr) ...
             (label))))]))
 
-(define-syntax (while stx)
+(define-syntax (s-while stx)
   (syntax-parse stx
     [(_ cond-expr body-expr ... )
      (with-syntax ([start (new-label)]
@@ -721,27 +713,6 @@
          (getobjs)
          )]))
 
-
-; there's probably a cool way to inline this
-; into the suspend-dispatch macro but I can't work
-; it out yet! happy this works ! :)
-(define-syntax (suspend-dispatch-case stx)
-  (syntax-parse stx
-    [(_ test body var end)
-     (with-syntax ([label (new-label)])
-       #'`(
-           ; load the response
-           (ldvar var)
-           ; evalaute the match expression
-           ,(eval-arg test)
-           ; skip the body if not equal
-           (bne label)
-           ; otherwise run the body and
-           ; jump to the end of the dispatcher
-           ,(eval-arg body)
-           (branch end)           
-           (label)))]))
-
 (define-syntax (suspend-dispatch stx)
   (syntax-parse stx
     [(_ req client ([test-expr body-expr]...))
@@ -749,26 +720,129 @@
        ([var (new-var)]
         [end (new-label)]
         [(dispatch-case ...)
-         #'((suspend-dispatch-case test-expr body-expr var end) ... )])
-     #'`(; first issue the flowroutine and wait for
-         ; a reponse
-         ,(eval-arg req)
-         ,(eval-arg client)
-         (suspend)
-         (stvar var)         
-         ,dispatch-case ...
-         (end))
-         )]))
+         (with-syntax
+           ([skip-body (new-label)])
+           #'`((;load the response
+                (ldvar var)
+                ;evaluate the match expression
+                ,(eval-arg test-expr)
+                ;skip the body if not equal
+                (bne skip-body)
+                ; otherwise run the body and
+                ; jump to the end of the dispatcher 
+                ,(eval-arg body-expr)
+                (branch end)
+                (skip-body))...))])       
+       #'`(,(eval-arg req)
+           ,(eval-arg client)
+           (suspend)
+           (stvar var)
+           ,(dispatch-case ...)
+           (end))
+       )]))
 
+(define-syntax (s-or stx)
+  (syntax-parse stx
+    [(_ expr ...)
+     (with-syntax*
+       ([when-true (new-label)]
+        [end (new-label)]
+        [(cases ...)
+         #'`((,(eval-arg expr)
+              (ldvalb 1)
+              (beq when-true))...)]) 
+       #'`(,(cases ...)
+           ;push false on the stack
+           (ldvalb 0)
+           (branch end)
+           ;if any of the cases are true they will
+           ;jump here and push true on the stack
+           (when-true ldvalb 1)
+           (end)))]))
+                 
+(define-syntax (s-and stx)
+  (syntax-parse stx
+    [(_ expr ...)
+     (with-syntax*
+       ([when-false (new-label)]
+        [end (new-label)]
+        [(cases ...)
+         #'`((,(eval-arg expr)
+             (ldvalb 0)
+             (beq when-false))...)])
+       #'`(,(cases ...)
+           (ldvalb 1)
+           (branch end)
+           (when-false ldvalb 0)
+           (end)))]))
+
+(define-syntax (s-not stx)
+  (syntax-parse stx
+    [(_ expr )
+     (with-syntax ([true-label (new-label)]
+                   [end (new-label)])
+     #'`(,(eval-arg expr)
+         (ldvalb 1)
+         (beq true-label)
+         (ldvalb 1)
+         (branch end)
+         (true-label)
+         (ldvalb 0)
+         (end)))]))
+
+(define-syntax (s-cond-case stx)
+  (syntax-parse stx
+     [(_ test-expr then-body cond-end)
+      (with-syntax ([end (new-label)])
+        #'`(,(eval-arg test-expr)
+            (ldvalb 1)
+            (bne end)
+            ,(eval-arg then-body)
+            (branch cond-end)
+            (end)))]))
+            
+(define-syntax (s-cond stx)
+  (syntax-parse stx #:datum-literals (else)                
+    [(_ [test-expr then-body] ...+
+        [else else-body])
+     (with-syntax ([cond-end (new-label)])       
+       #'`(,(s-cond-case test-expr then-body cond-end) ...
+           ,(eval-arg else-body)
+           (cond-end)))]
+     [(_ [test-expr then-body] ...+)
+      (with-syntax ([cond-end (new-label)])       
+       #'`(,(s-cond-case test-expr then-body cond-end) ...
+           (cond-end)))]))     
 
 (scurry
  (def (main)
+   (def x "andrea")
+   (s-cond
+    [(eq 1 0) (dbgl "1!")]
+    [(eq 2 2) (dbgl "2!")]
+    [else (dbgl "3!")]
+    )
+   
+   (dbg "andrea's face is "(s-not (s-not (eq 1 1))) "\n")
+   (s-if (s-and
+          (s-or (eq x "andrea") (eq 2 1))
+          (eq 2 2)
+
+
+          
+
+)
+         (dbgl "true!")
+         (dbgl (add "your " "face!"))
+         
+
+)
    (def-req req "test")
    (add-req-action req "a" "test a")
    (add-req-action req "b" "test b")
    (suspend-dispatch req "clienta"
      (["a" (dbg "client replied a")]
       ["b" (dbg "client replied b")]))
-   ;(def resp (suspend req "test request"))
+   (def resp (suspend req "test request"))
 
    ))
