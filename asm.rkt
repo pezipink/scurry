@@ -105,83 +105,85 @@
         [(list 'stvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
         [(list 'p_stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
         [(list 'ldprop) 7]
-        [(list 'stprop) 8]
-        [(list 'p_stprop) 9]
-        [(list 'hasprop) 10]
-        [(list 'p_hasprop) 11]
-        [(list 'add) 12]
-        [(list 'sub) 13]
-        [(list 'mul) 14]
-        [(list 'div) 15]
-        [(list 'mod) 16]
-        [(list 'rndi) 17]
-        [(list 'concat) 18]
-        [(list 'cstr) 19]
-        [(list 'cint) 20]
-        [(list 'ceq) 21]
-        [(list 'cne) 22]
-        [(list 'cgt) 23]
-        [(list 'clt) 24]
-        [(list 'beq x)    (flatten (list 25 (get-int-bytes(check-string x))))]
-        [(list 'bne x)    (flatten (list 26 (get-int-bytes(check-string x))))]
-        [(list 'bgt x)    (flatten (list 27 (get-int-bytes(check-string x))))]
-        [(list 'blt x)    (flatten (list 28 (get-int-bytes(check-string x))))]
-        [(list 'branch x) (flatten (list 29 (get-int-bytes(check-string x))))]
-        [(list 'createobj) 30]
-        [(list 'cloneobj) 31]
-        [(list 'getobj) 32]
-        [(list 'getobjs) 33]
-        [(list 'delprop) 34]
-        [(list 'p_delprop) 35]
-        [(list 'delobj) 36]
-        [(list 'moveobj) 37]
-        [(list 'p_moveobj) 38]
-        [(list 'createlist) 39]
-        [(list 'appendlist) 40]
-        [(list 'p_appendlist) 41]
-        [(list 'removelist) 42]
-        [(list 'p_removelist) 43]
-        [(list 'len) 44]
-        [(list 'p_len) 45]
-        [(list 'index) 46]
-        [(list 'p_index) 47]
-        [(list 'keys) 48]
-        [(list 'values) 49]
-        [(list 'getloc) 50]
-        [(list 'genloc) 51]
-        [(list 'genlocref) 52]
-        [(list 'setlocsibling) 53]
-        [(list 'p_setlocsibling) 54]
-        [(list 'setlocchild) 55]
-        [(list 'p_setlocchild) 56]
-        [(list 'setlocparent) 57]
-        [(list 'p_setlocparent) 58]
-        [(list 'getlocsiblings) 59]
-        [(list 'p_getlocsiblings) 60]
-        [(list 'getlocchildren) 61]
-        [(list 'p_getlocchildren) 62]
-        [(list 'getlocparent) 63]
-        [(list 'p_getlocparent) 64]
-        [(list 'setvis) 65]
-        [(list 'p_setvis) 66]
-        [(list 'adduni) 67]
-        [(list 'deluni) 68]
-        [(list 'roll) 69]
-        [(list 'deal) 70]
-        [(list 'shuffle) 71]
-        [(list 'merge) 72]
-        [(list 'sort) 73]
-        [(list 'genreq) 74]
-        [(list 'addaction) 75]
-        [(list 'p_addaction) 76]
-        [(list 'suspend) 77]
-        [(list 'suspendu) 78]
-        [(list 'fallback) 79]
-        [(list 'say) 80]
-        [(list 'call x)    (flatten (list 81 (get-int-bytes(check-string x))))]
-        [(list 'ret) 82]
-        [(list 'dbg) 83]
-        [(list 'dbgl) 84]
+        [(list 'p_ldprop) 8]
+        [(list 'stprop) 9]
+        [(list 'p_stprop) 10]
+        [(list 'hasprop) 11]
+        [(list 'p_hasprop) 12]
+        [(list 'add) 13]
+        [(list 'sub) 14]
+        [(list 'mul) 15]
+        [(list 'div) 16]
+        [(list 'mod) 17]
+        [(list 'rndi) 18]
+        [(list 'concat) 19]
+        [(list 'cstr) 20]
+        [(list 'cint) 21]
+        [(list 'ceq) 22]
+        [(list 'cne) 23]
+        [(list 'cgt) 24]
+        [(list 'clt) 25]
+        [(list 'beq x)    (flatten (list 26 (get-int-bytes(check-string x))))]
+        [(list 'bne x)    (flatten (list 27 (get-int-bytes(check-string x))))]
+        [(list 'bgt x)    (flatten (list 28 (get-int-bytes(check-string x))))]
+        [(list 'blt x)    (flatten (list 29 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 30 (get-int-bytes(check-string x))))]
+        [(list 'createobj) 31]
+        [(list 'cloneobj) 32]
+        [(list 'getobj) 33]
+        [(list 'getobjs) 34]
+        [(list 'delprop) 35]
+        [(list 'p_delprop) 36]
+        [(list 'delobj) 37]
+        [(list 'moveobj) 38]
+        [(list 'p_moveobj) 39]
+        [(list 'createlist) 40]
+        [(list 'appendlist) 41]
+        [(list 'p_appendlist) 42]
+        [(list 'removelist) 43]
+        [(list 'p_removelist) 44]
+        [(list 'len) 45]
+        [(list 'p_len) 46]
+        [(list 'index) 47]
+        [(list 'p_index) 48]
+        [(list 'keys) 49]
+        [(list 'values) 50]
+        [(list 'getloc) 51]
+        [(list 'genloc) 52]
+        [(list 'genlocref) 53]
+        [(list 'setlocsibling) 54]
+        [(list 'p_setlocsibling) 55]
+        [(list 'setlocchild) 56]
+        [(list 'p_setlocchild) 57]
+        [(list 'setlocparent) 58]
+        [(list 'p_setlocparent) 59]
+        [(list 'getlocsiblings) 60]
+        [(list 'p_getlocsiblings) 61]
+        [(list 'getlocchildren) 62]
+        [(list 'p_getlocchildren) 63]
+        [(list 'getlocparent) 64]
+        [(list 'p_getlocparent) 65]
+        [(list 'setvis) 66]
+        [(list 'p_setvis) 67]
+        [(list 'adduni) 68]
+        [(list 'deluni) 69]
+        [(list 'roll) 70]
+        [(list 'deal) 71]
+        [(list 'shuffle) 72]
+        [(list 'merge) 73]
+        [(list 'sort) 74]
+        [(list 'genreq) 75]
+        [(list 'addaction) 76]
+        [(list 'p_addaction) 77]
+        [(list 'suspend) 78]
+        [(list 'suspendu) 79]
+        [(list 'fallback) 80]
+        [(list 'say) 81]
+        [(list 'call x)    (flatten (list 82 (get-int-bytes(check-string x))))]
+        [(list 'ret) 83]
+        [(list 'dbg) 84]
+        [(list 'dbgl) 85]
+
         ))))
 
 (define (assemble opcodes)
@@ -323,6 +325,13 @@
      #'`(,(eval-arg obj)
          ,(eval-arg key)
          (hasprop))]))
+
+(define-syntax (del-prop stx)
+  (syntax-parse stx
+    [(_ obj key)
+     #'`(,(eval-arg obj)
+         ,(eval-arg key)
+         (delprop))]))
 
 (define-syntax (set-prop stx)
   (syntax-parse stx
@@ -515,6 +524,11 @@
          ,(eval-arg key)
          (removelist))]))
 
+(define-syntax (s-return stx)
+  (syntax-parse stx
+    [(_ var)
+     #'`(,(eval-arg var))]))
+
 ;; (begin-for-syntax
 ;;   (define-syntax (reverse-args stx)
 ;;                        (datum->syntax stx (reverse (cdr (syntax->datum stx))))))
@@ -589,10 +603,12 @@
 
 (define-syntax (dbgl stx)
   (syntax-parse stx
-    [(_ var ...)
-     #'`((,(eval-arg var)
-           (dbgl)) ...)
-         ]))
+    [(_ var ... last-var)
+     #'`((
+          (,(eval-arg var)
+           (dbg)) ...)
+         ,(eval-arg last-var)
+         (dbgl))]))
 
 (define-syntax (s-if stx)
   (syntax-parse stx
@@ -814,35 +830,85 @@
        #'`(,(s-cond-case test-expr then-body cond-end) ...
            (cond-end)))]))     
 
+(define-syntax (prop-match-id stx)
+  (syntax-parse stx
+    ([_ id]
+     (with-syntax ([new-id (symbol->string (syntax-e #'id))])
+       #'new-id))))
+
+(define-syntax (prop-match-val stx)
+  (syntax-parse stx #:datum-literals (*)
+    [(_ * end)   
+      #''()]
+    [(_ v-expr end)
+     #'`(,(eval-arg v-expr)
+         (bne end))])) 
+    
+(define-syntax (obj-match stx)
+  (syntax-parse stx 
+    [(_ obj-expr
+        ([(k v)
+          (k-expr (~optional v-expr:expr #:defaults([v-expr #'*])))]...)
+        body-expr        
+        (~optional else-expr:expr #:defaults([else-expr #'`()]))
+        )
+     (with-syntax
+       ([end (new-label)]
+        [f-end (new-label)])
+     #'`(
+         ; for each case in turn, try to match both the key and
+         ; value (if passed)  and save them in the passed variable names.
+         ; if all match ok then execute the body.
+         ; (note this can leave some variables populated even if there
+         ; is no match - this is alright for now. it will aslo overwrite
+         ; another variable with the same name. also ok.)
+         (,(eval-arg obj-expr)
+         ,(eval-arg k-expr)
+         (p_stvar ,(prop-match-id k))
+         (p_hasprop)
+         (ldvalb 0)
+         (beq f-end)
+         (ldvar ,(prop-match-id k))
+         (p_ldprop)
+          (p_stvar ,(prop-match-id v))
+          ,(prop-match-val v-expr f-end)) ...
+         ,body-expr
+         (branch end)
+         (f-end)
+         ,else-expr 
+         (end)
+         (pop)
+         ))]))
 (scurry
  (def (main)
-   (def x "andrea")
-   (s-cond
-    [(eq 1 0) (dbgl "1!")]
-    [(eq 2 2) (dbgl "2!")]
-    [else (dbgl "3!")]
-    )
+   (dbgl (sub 1 10))))
+
+
+;; (scurry
+;;  (def (main)
+
+;;    (def-obj juan
+;;      (["key" 1]
+;;       ["key2" 2]
+;;       ["key3" "andrea!"]))
+
+;;    (def p "andrea")
+;;    (def x 2)
+
+;;    (obj-match juan
+;;      ([(_ v) ("key" 1)]
+;;       [(k2 v2) ("key3" 20)])
+;;       (s-begin
+;;        (dbgl "key is " k " value is " v)
+;;        (dbgl "key is " k2 " value is " v2))
+;;       )
    
-   (dbg "andrea's face is "(s-not (s-not (eq 1 1))) "\n")
-   (s-if (s-and
-          (s-or (eq x "andrea") (eq 2 1))
-          (eq 2 2)
+;;    ;; (def-req req "test")
+;;    ;; (add-req-action req "a" "test a")
+;;    ;; (add-req-action req "b" "test b")
+;;    ;; (suspend-dispatch req "clienta"
+;;    ;;   (["a" (dbg "client replied a")]
+;;    ;;    ["b" (dbg "client replied b")]))
+;;    ;; (def resp (suspend req "test request"))
 
-
-          
-
-)
-         (dbgl "true!")
-         (dbgl (add "your " "face!"))
-         
-
-)
-   (def-req req "test")
-   (add-req-action req "a" "test a")
-   (add-req-action req "b" "test b")
-   (suspend-dispatch req "clienta"
-     (["a" (dbg "client replied a")]
-      ["b" (dbg "client replied b")]))
-   (def resp (suspend req "test request"))
-
-   ))
+;;    ))

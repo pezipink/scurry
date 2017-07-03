@@ -1,5 +1,25 @@
 #lang racket
 (require "asm.rkt")
+(require (for-syntax syntax/parse))
+
+(define-syntax (obj-exists-in-loc stx)
+  (syntax-parse stx
+    [(_ loc matcher)
+     #'(s-begin
+         (def found 0)
+         (def index 0)
+         (def objs (get-objs loc))
+         (s-while (s-and (s-not found) (ne index (list-len objs)))
+           (def obj (nth index objs))
+           (def index (add 1 index))
+           (dbgl "index is " index)
+           (obj-match obj
+                      matcher
+                      (def found 1))
+           (dbgl "loop"))
+         (s-return found))
+        ]))
+     
 
 (scurry
  (def (main)
@@ -18,8 +38,10 @@
      ;assign the camel to a quick-lookup dict by colour
      (set-prop camels c camel))
    (set-prop (get-loc "track1") "camel-stack" stack)
-
-
+   (def-list camel-dice "green" "blue" "orange" "yellow" "white")
+   (set-global "camel-dice" camel-dice)
+   (def-obj temp (["type" "trap"]))
+   (move-obj temp "track10")
    ;each player takes a turn where they can possibly:
    ; - take a pyramid card and cause a camel to move
    ; - take a leg betting card
@@ -28,37 +50,137 @@
    ; when no more camels can move, the leg is over and money
    ; is adjusted, then the camels are able to move again and the process
    ; continues
-
+   (def camel-keys (keys camels))
    (def players (vals (get-players)))
-;   (while (get-global "race-on")
+   (s-while (get-global "race-on")
      (foreach (p players)
+       (def client (get-prop p "clientid"))
        (def remaining-pyramid-cards (get-objs (get-loc "pyramid-stack")))
        (s-when (get-global "race-on")
          (s-unless (eq 0 (list-len remaining-pyramid-cards))
            (s-begin
             (def-req msg "choose an action")
+            ; a pyramid cards gets those camels moving
             (add-req-action msg "pyramid-card" "take a pyramid card")
-            (suspend-dispatch msg (get-prop p "clientid")
-              (["pyramid-card" (dbg "player choose card")])))
+            ; if the player hasn't used their trap then add two actions for it
+            ; one for the oasis and the other the mirage
+            (s-when (has-prop p "trap")
+              (add-req-action msg "trap-mirage" "place mirage trap")
+              (add-req-action msg "trap-oasis" "place oasis trap"))
+            
+            ; add the top value card for each leg betting colour, if any are left
+            (foreach (c colours)
+              (def bet-loc (get-loc (add c "-bets")))
+              (def cards (get-prop bet-loc "leg-cards"))              
+              (s-unless (eq 0 (list-len cards))
+                (add-req-action msg
+                                (add c "-leg")
+                                (add "bet on " c " to win the leg"))))
+            (call(build-trap-location-actions msg))
+            (def resp (suspend msg client))
+            (s-cond
+             ;todo: need a startsWith, endsWith, contains
+             [(eq resp "pyramid-card")
+              (s-begin
+               (dbgl "player chose a pyramid card")
+               (call (play-pyramid-card p))
+               )
+               ]
+             [(eq resp "orange-leg")
+              (dbgl "player chose to bet on orange for this leg")]
+             [else (dbgl "player chose something else : " resp)])
+
+            (s-when (eq 0 (list-len (get-objs (get-loc "pyramid-stack"))))
+              (dbgl "leg over!")
+              (def-list camel-dice "green" "blue" "orange" "yellow" "white")
+              (set-global "camel-dice" camel-dice)
+              (foreach (p2 players)
+                (foreach (o (get-objs (get-prop p2 "clientid")))
+                  (move-obj o "pyramid-stack"))))
+
+            
+            
            ; prepare options for player
            ))
-           )
- ;    )
+           ))
+  ;   )
    
    ; race the camels around randomly
-   (def camel-keys (keys camels))
-   (while (get-global "race-on")
-     (def i (rndi (list-len camel-keys)))
-     (def spaces (rndi 1 3))
-     (call (move-camel
-            (get-prop camels (nth i camel-keys))
-            spaces)))
+     )
+   ;; (s-while (get-global "race-on")
+   ;;   (def i (rndi (list-len camel-keys)))
+   ;;   (def spaces (rndi 1 3))
+   ;;   (call (move-camel
+   ;;          (get-prop camels (nth i camel-keys))
+   ;;          spaces)))
 
    ; race over
    (foreach (c (vals camels))
      (dbg "camel " (get-prop c "colour") " is at location " (get-loc c))
-     (dbgl ""))
-   ) 
+     (dbgl ""))) 
+
+ (def (build-trap-location-actions msg)
+   ;second stage of trap action.
+   ;traps can be placed in a location if:
+   ;* no camels are there
+   ;* a trap is not there
+   ;* a trap is not either side
+   (def track-index 1)
+   (s-while (lt track-index 17)
+     (def loc (get-loc (add "track" track-index)))
+     (def next (get-loc (call (get-sibling loc "next"))))
+     (def prev (get-loc (call (get-sibling loc "prev"))))
+     (def cam (get-prop loc "camel-stack"))
+     (s-when
+      (s-and
+       (eq 0 (list-len (get-prop loc "camel-stack")))
+       (s-not (obj-exists-in-loc loc  ([(k v) ("type" "trap")])))
+       (s-not (obj-exists-in-loc next ([(k v) ("type" "trap")])))
+       (s-not (obj-exists-in-loc prev ([(k v) ("type" "trap")]))))
+      (add-req-action
+       msg
+       (add "track" track-index "-oasis")
+       (add "place an oasis at track " track-index))
+      (add-req-action
+       msg
+       (add "track" track-index "-mirage")
+       (add "place a mirage at track " track-index)))
+     (def track-index (add 1 track-index))))
+                
+       
+ (def (play-pyramid-card player)
+   ;pyramid cards aren't in stacks, just grab the first one
+   ;from the location and move to the player location
+   (dbgl "there are currently " (list-len (get-objs (get-loc "pyramid-stack"))))
+   (def card (nth 0 (get-objs (get-loc "pyramid-stack"))))
+   (set-prop card "owner" client)
+   (move-obj card client)
+   (dbgl "there are now " (list-len (get-objs (get-loc "pyramid-stack"))))
+   ;now get those camels moving!
+   (dbgl "picking a camel to move ...")
+   (def i (rndi (list-len (get-global "camel-dice"))))
+   (def camel-dice (get-global "camel-dice"))
+   (def new-list (remove-list camel-dice (nth i camel-dice)))
+   (set-global "camel-dice" new-list)               
+   (call
+    (move-camel
+     (get-prop camels (nth i camel-keys)) (rndi 1 4))))
+
+ (def (get-sibling location key)
+   (def sibs (get-siblings location))
+   (def i 0)
+   (s-while (eq 0 (has-prop (nth i sibs) key))
+            (def i (add 1 i)))
+   (s-return (nth i sibs)))
+ 
+ ;; (def (get-track-offset current-track key amount)
+ ;;   ; move forward or backwards via key locref amount times
+ ;;   (s-if
+ ;;    (eq amount 0)
+ ;;    (s-return current-track)
+ ;;    (s-begin
+ ;;     (def target-loc (get-loc (call (get-sibling current-track key))))
+ ;;     (call (get-track-offset target-loc key (sub amount 1))))))
  
  (def (move-camel camel amount)
    (dbg "move-camel " (get-prop camel "colour") " " amount "\n")
@@ -73,13 +195,8 @@
    (def current-loc (get-loc camel))
    (def target-loc (get-loc camel))
    (def cnt 0)
-   (while (lt cnt amount)
-     ;todo: replace this with a find macro/func of some kind
-     (def sibs (get-siblings target-loc))
-     (def cnt2 0) 
-     (while (eq 0 (has-prop (nth cnt2 sibs) "next"))
-       (def cnt2 (add 1 cnt2)))
-     (def sib (nth cnt2 sibs))
+   (s-while (lt cnt amount)
+     (def sib (call (get-sibling target-loc "next")))
      (s-when (eq "finish" (get-prop sib "next"))
        (set-global "race-on" 0))
      (def target-loc (get-loc sib))
@@ -117,7 +234,7 @@
    (def track (create-location "track1" "track"))
    (set-prop track "camel-stack" '(createlist))
    (def track-no 2)
-   (while (lt track-no 17)
+   (s-while (lt track-no 17)
      ;create and link the next 15 sections
      (def curr-track (add "track" track-no))
      (def prev-track (add "track" (sub 1 track-no)))
@@ -128,6 +245,7 @@
      (def track-no (add 1 track-no)))
    ;wrap around at end, mark as finish line!
    (link-location "track16" "track1" (["next" "finish"]))
+   (link-location "track1" "track16" (["prev" "prev"]))
 
    (def pyramid-stack (create-location "pyramid-stack" root-loc))
    (def pyramid (create-location "pyramid" root-loc))
@@ -152,7 +270,7 @@
                   ["owner" ""])))
       (move-obj card bet)
       (append-list leg-cards card))
-     (set-prop tent "leg-cards" leg-cards)
+     (set-prop bet "leg-cards" leg-cards)
      ;one pyramid card for each camel
      (def cards (get-objs pyramid-stack))
      (move-obj (create-obj (["type" "pyramid-card"]
@@ -163,10 +281,13 @@
  (def (setup-players)
    ; get player list
    (def players (vals (get-players)))   
+
    (foreach (player players)
+    (def client (get-prop player "clientid"))
+    ; create location for player
+    (ignore (create-location client "root"))
     ; each player gets 8 egyptian pounds
     ; a set of camel cards and a trap
-    (def client (get-prop player "clientid"))
     (def-list finish-cards)
     (foreach (c colours)
       ;one finish betting card for each colour camel!
