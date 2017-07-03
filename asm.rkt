@@ -108,82 +108,85 @@
         [(list 'p_ldprop) 8]
         [(list 'stprop) 9]
         [(list 'p_stprop) 10]
-        [(list 'hasprop) 11]
-        [(list 'p_hasprop) 12]
-        [(list 'add) 13]
-        [(list 'sub) 14]
-        [(list 'mul) 15]
-        [(list 'div) 16]
-        [(list 'mod) 17]
-        [(list 'rndi) 18]
-        [(list 'concat) 19]
-        [(list 'cstr) 20]
-        [(list 'cint) 21]
-        [(list 'ceq) 22]
-        [(list 'cne) 23]
-        [(list 'cgt) 24]
-        [(list 'clt) 25]
-        [(list 'beq x)    (flatten (list 26 (get-int-bytes(check-string x))))]
-        [(list 'bne x)    (flatten (list 27 (get-int-bytes(check-string x))))]
-        [(list 'bgt x)    (flatten (list 28 (get-int-bytes(check-string x))))]
-        [(list 'blt x)    (flatten (list 29 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 30 (get-int-bytes(check-string x))))]
-        [(list 'createobj) 31]
-        [(list 'cloneobj) 32]
-        [(list 'getobj) 33]
-        [(list 'getobjs) 34]
-        [(list 'delprop) 35]
-        [(list 'p_delprop) 36]
-        [(list 'delobj) 37]
-        [(list 'moveobj) 38]
-        [(list 'p_moveobj) 39]
-        [(list 'createlist) 40]
-        [(list 'appendlist) 41]
-        [(list 'p_appendlist) 42]
-        [(list 'removelist) 43]
-        [(list 'p_removelist) 44]
-        [(list 'len) 45]
-        [(list 'p_len) 46]
-        [(list 'index) 47]
-        [(list 'p_index) 48]
-        [(list 'keys) 49]
-        [(list 'values) 50]
-        [(list 'getloc) 51]
-        [(list 'genloc) 52]
-        [(list 'genlocref) 53]
-        [(list 'setlocsibling) 54]
-        [(list 'p_setlocsibling) 55]
-        [(list 'setlocchild) 56]
-        [(list 'p_setlocchild) 57]
-        [(list 'setlocparent) 58]
-        [(list 'p_setlocparent) 59]
-        [(list 'getlocsiblings) 60]
-        [(list 'p_getlocsiblings) 61]
-        [(list 'getlocchildren) 62]
-        [(list 'p_getlocchildren) 63]
-        [(list 'getlocparent) 64]
-        [(list 'p_getlocparent) 65]
-        [(list 'setvis) 66]
-        [(list 'p_setvis) 67]
-        [(list 'adduni) 68]
-        [(list 'deluni) 69]
-        [(list 'roll) 70]
-        [(list 'deal) 71]
-        [(list 'shuffle) 72]
-        [(list 'merge) 73]
-        [(list 'sort) 74]
-        [(list 'genreq) 75]
-        [(list 'addaction) 76]
-        [(list 'p_addaction) 77]
-        [(list 'suspend) 78]
-        [(list 'suspendu) 79]
-        [(list 'fallback) 80]
-        [(list 'say) 81]
-        [(list 'call x)    (flatten (list 82 (get-int-bytes(check-string x))))]
-        [(list 'ret) 83]
-        [(list 'dbg) 84]
-        [(list 'dbgl) 85]
-
+        [(list 'add) 11]
+        [(list 'sub) 12]
+        [(list 'mul) 13]
+        [(list 'div) 14]
+        [(list 'mod) 15]
+        [(list 'rndi) 16]
+        [(list 'startswith) 17]
+        [(list 'p_startswith) 18]
+        [(list 'endswith) 19]
+        [(list 'p_endswith) 20]
+        [(list 'contains) 21]
+        [(list 'p_contains) 22]
+        [(list 'indexof) 23]
+        [(list 'p_indexof) 24]
+        [(list 'substring) 25]
+        [(list 'p_substring) 26]
+        [(list 'ceq) 27]
+        [(list 'cne) 28]
+        [(list 'cgt) 29]
+        [(list 'clt) 30]
+        [(list 'beq x)    (flatten (list 31 (get-int-bytes(check-string x))))]
+        [(list 'bne x)    (flatten (list 32 (get-int-bytes(check-string x))))]
+        [(list 'bgt x)    (flatten (list 33 (get-int-bytes(check-string x))))]
+        [(list 'blt x)    (flatten (list 34 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 35 (get-int-bytes(check-string x))))]
+        [(list 'createobj) 36]
+        [(list 'cloneobj) 37]
+        [(list 'getobj) 38]
+        [(list 'getobjs) 39]
+        [(list 'delprop) 40]
+        [(list 'p_delprop) 41]
+        [(list 'delobj) 42]
+        [(list 'moveobj) 43]
+        [(list 'p_moveobj) 44]
+        [(list 'createlist) 45]
+        [(list 'appendlist) 46]
+        [(list 'p_appendlist) 47]
+        [(list 'removelist) 48]
+        [(list 'p_removelist) 49]
+        [(list 'len) 50]
+        [(list 'p_len) 51]
+        [(list 'index) 52]
+        [(list 'p_index) 53]
+        [(list 'keys) 54]
+        [(list 'values) 55]
+        [(list 'getloc) 56]
+        [(list 'genloc) 57]
+        [(list 'genlocref) 58]
+        [(list 'setlocsibling) 59]
+        [(list 'p_setlocsibling) 60]
+        [(list 'setlocchild) 61]
+        [(list 'p_setlocchild) 62]
+        [(list 'setlocparent) 63]
+        [(list 'p_setlocparent) 64]
+        [(list 'getlocsiblings) 65]
+        [(list 'p_getlocsiblings) 66]
+        [(list 'getlocchildren) 67]
+        [(list 'p_getlocchildren) 68]
+        [(list 'getlocparent) 69]
+        [(list 'p_getlocparent) 70]
+        [(list 'setvis) 71]
+        [(list 'p_setvis) 72]
+        [(list 'adduni) 73]
+        [(list 'deluni) 74]
+        [(list 'roll) 75]
+        [(list 'deal) 76]
+        [(list 'shuffle) 77]
+        [(list 'merge) 78]
+        [(list 'sort) 79]
+        [(list 'genreq) 80]
+        [(list 'addaction) 81]
+        [(list 'p_addaction) 82]
+        [(list 'suspend) 83]
+        [(list 'cut) 84]
+        [(list 'say) 85]
+        [(list 'call x)    (flatten (list 86 (get-int-bytes(check-string x))))]
+        [(list 'ret) 87]
+        [(list 'dbg) 88]
+        [(list 'dbgl) 89]
         ))))
 
 (define (assemble opcodes)
@@ -318,13 +321,6 @@
      #'`(,(eval-arg obj)
          ,(eval-arg key)
          (ldprop))]))
-
-(define-syntax (has-prop stx)
-  (syntax-parse stx
-    [(_ obj key)
-     #'`(,(eval-arg obj)
-         ,(eval-arg key)
-         (hasprop))]))
 
 (define-syntax (del-prop stx)
   (syntax-parse stx
@@ -509,6 +505,11 @@
          ,(eval-arg id)
            (addaction)
            )]))
+
+(define-syntax (cut stx)
+  (syntax-parse stx
+    [(_)
+     #'`((cut))]))
 
 (define-syntax (suspend stx)
   (syntax-parse stx
@@ -700,6 +701,43 @@
          ,(eval-arg right)
          (sub))]))
 
+(define-syntax (starts-with stx)
+  (syntax-parse stx
+    [(_ str test)
+     #'`(,(eval-arg str)
+         ,(eval-arg test)
+         (startswith))]))
+
+(define-syntax (ends-with stx)
+  (syntax-parse stx
+    [(_ str test)
+     #'`(,(eval-arg str)
+         ,(eval-arg test)
+         (endswith))]))
+
+(define-syntax (index-of stx)
+  (syntax-parse stx
+    [(_ str test)
+     #'`(,(eval-arg str)
+         ,(eval-arg test)
+         (indexof))]))
+
+(define-syntax (substring stx)
+  (syntax-parse stx
+    [(_ str start len)
+     #'`(,(eval-arg str)
+         ,(eval-arg start)
+         ,(eval-arg len)
+         (substring))]))
+
+
+(define-syntax (contains stx)
+  (syntax-parse stx
+    [(_ str test)
+     #'`(,(eval-arg str)
+         ,(eval-arg test)
+         (contains))]))
+
 (define-syntax (ignore stx)
   (syntax-parse stx
     [(_ expr)
@@ -863,13 +901,13 @@
          ; is no match - this is alright for now. it will aslo overwrite
          ; another variable with the same name. also ok.)
          (,(eval-arg obj-expr)
-         ,(eval-arg k-expr)
-         (p_stvar ,(prop-match-id k))
-         (p_hasprop)
-         (ldvalb 0)
-         (beq f-end)
-         (ldvar ,(prop-match-id k))
-         (p_ldprop)
+          ,(eval-arg k-expr)
+          (p_stvar ,(prop-match-id k))
+          (p_contains)
+          (ldvalb 0)
+          (beq f-end)
+          (ldvar ,(prop-match-id k))
+          (p_ldprop)
           (p_stvar ,(prop-match-id v))
           ,(prop-match-val v-expr f-end)) ...
          ,body-expr
@@ -879,36 +917,11 @@
          (end)
          (pop)
          ))]))
-(scurry
- (def (main)
-   (dbgl (sub 1 10))))
-
-
 ;; (scurry
 ;;  (def (main)
-
-;;    (def-obj juan
-;;      (["key" 1]
-;;       ["key2" 2]
-;;       ["key3" "andrea!"]))
-
-;;    (def p "andrea")
-;;    (def x 2)
-
-;;    (obj-match juan
-;;      ([(_ v) ("key" 1)]
-;;       [(k2 v2) ("key3" 20)])
-;;       (s-begin
-;;        (dbgl "key is " k " value is " v)
-;;        (dbgl "key is " k2 " value is " v2))
-;;       )
-   
-;;    ;; (def-req req "test")
-;;    ;; (add-req-action req "a" "test a")
-;;    ;; (add-req-action req "b" "test b")
-;;    ;; (suspend-dispatch req "clienta"
-;;    ;;   (["a" (dbg "client replied a")]
-;;    ;;    ["b" (dbg "client replied b")]))
-;;    ;; (def resp (suspend req "test request"))
-
+;;    (def test "hello world")
+;;    (dbgl (starts-with test "hello"))
+;;    (dbgl (ends-with test "hello"))
+;;    (dbgl (ends-with test "world"))
+;;    (dbgl (contains test "lo wo"))
 ;;    ))

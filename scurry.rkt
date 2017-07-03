@@ -19,8 +19,7 @@
            (dbgl "loop"))
          (s-return found))
         ]))
-     
-
+    
 (scurry
  (def (main)
    (def-list colours "green" "blue" "orange" "yellow" "white")
@@ -64,7 +63,7 @@
             (add-req-action msg "pyramid-card" "take a pyramid card")
             ; if the player hasn't used their trap then add two actions for it
             ; one for the oasis and the other the mirage
-            (s-when (has-prop p "trap")
+            (s-when (contains p "trap")
               (add-req-action msg "trap-mirage" "place mirage trap")
               (add-req-action msg "trap-oasis" "place oasis trap"))
             
@@ -76,18 +75,28 @@
                 (add-req-action msg
                                 (add c "-leg")
                                 (add "bet on " c " to win the leg"))))
-            (call(build-trap-location-actions msg))
+            
             (def resp (suspend msg client))
-            (s-cond
-             ;todo: need a startsWith, endsWith, contains
+            (s-cond            
+
              [(eq resp "pyramid-card")
               (s-begin
+               (cut)
                (dbgl "player chose a pyramid card")
-               (call (play-pyramid-card p))
-               )
-               ]
-             [(eq resp "orange-leg")
-              (dbgl "player chose to bet on orange for this leg")]
+               (call (play-pyramid-card p)))]
+
+             [(contains resp "trap")
+              (s-begin
+               ;further suspend to chose the location
+               (def is-oasis? (contains resp "oasis"))
+               (call (play-trap p is-oasis?)))]
+
+             
+             [(contains resp "-leg")
+              (s-begin
+               (def colour (substring resp 0 (index-of resp "-")))
+               (dbgl "player chose to bet on " colour " for this leg"))]
+             
              [else (dbgl "player chose something else : " resp)])
 
             (s-when (eq 0 (list-len (get-objs (get-loc "pyramid-stack"))))
@@ -97,29 +106,38 @@
               (foreach (p2 players)
                 (foreach (o (get-objs (get-prop p2 "clientid")))
                   (move-obj o "pyramid-stack"))))
+                       
 
-            
-            
-           ; prepare options for player
            ))
            ))
   ;   )
    
-   ; race the camels around randomly
+
      )
-   ;; (s-while (get-global "race-on")
-   ;;   (def i (rndi (list-len camel-keys)))
-   ;;   (def spaces (rndi 1 3))
-   ;;   (call (move-camel
-   ;;          (get-prop camels (nth i camel-keys))
-   ;;          spaces)))
 
    ; race over
    (foreach (c (vals camels))
      (dbg "camel " (get-prop c "colour") " is at location " (get-loc c))
      (dbgl ""))) 
 
- (def (build-trap-location-actions msg)
+ (def (play-trap player is-oasis?)
+   (def-req trap-msg
+     (s-if is-oasis?
+           "where do you wish to place your oasis?"
+           "where do you wish to place your mirage?"))
+   (call(build-trap-location-actions trap-msg is-oasis?))
+   (def trap-resp (suspend trap-msg client))
+   (cut)
+   (def loc (substring trap-resp 0 (index-of trap-resp "-")))
+   (dbgl "player chose to place at " loc )
+   ; move trap!
+   (def trap (get-prop p "trap"))
+   (set-prop trap "trap-type" (s-if is-oasis? "oasis" "mirage"))
+   (move-obj trap (get-loc loc))
+   (del-prop p "trap"))
+
+ 
+ (def (build-trap-location-actions msg oasis?)
    ;second stage of trap action.
    ;traps can be placed in a location if:
    ;* no camels are there
@@ -137,27 +155,25 @@
        (s-not (obj-exists-in-loc loc  ([(k v) ("type" "trap")])))
        (s-not (obj-exists-in-loc next ([(k v) ("type" "trap")])))
        (s-not (obj-exists-in-loc prev ([(k v) ("type" "trap")]))))
-      (add-req-action
-       msg
-       (add "track" track-index "-oasis")
-       (add "place an oasis at track " track-index))
-      (add-req-action
-       msg
-       (add "track" track-index "-mirage")
-       (add "place a mirage at track " track-index)))
+      (s-if oasis?
+       (add-req-action
+        msg
+        (add "track" track-index "-oasis")
+        ; it's midnight at the oasis, and all the camels are dead!
+        (add "place an oasis at track " track-index))
+       (add-req-action
+        msg
+        (add "track" track-index "-mirage")
+        (add "place a mirage at track " track-index))))
      (def track-index (add 1 track-index))))
-                
-       
+                       
  (def (play-pyramid-card player)
    ;pyramid cards aren't in stacks, just grab the first one
    ;from the location and move to the player location
-   (dbgl "there are currently " (list-len (get-objs (get-loc "pyramid-stack"))))
    (def card (nth 0 (get-objs (get-loc "pyramid-stack"))))
    (set-prop card "owner" client)
    (move-obj card client)
-   (dbgl "there are now " (list-len (get-objs (get-loc "pyramid-stack"))))
    ;now get those camels moving!
-   (dbgl "picking a camel to move ...")
    (def i (rndi (list-len (get-global "camel-dice"))))
    (def camel-dice (get-global "camel-dice"))
    (def new-list (remove-list camel-dice (nth i camel-dice)))
@@ -169,7 +185,7 @@
  (def (get-sibling location key)
    (def sibs (get-siblings location))
    (def i 0)
-   (s-while (eq 0 (has-prop (nth i sibs) key))
+   (s-while (eq 0 (contains (nth i sibs) key))
             (def i (add 1 i)))
    (s-return (nth i sibs)))
  
@@ -203,8 +219,6 @@
      (def cnt (add 1 cnt)))
 
    ; now we have the target location.
-   (dbg "current-loc is " current-loc "\n")
-   (dbg "target-loc is " target-loc "\n")
    ; grab the camel stack from the current location and split it
    ; such that the current camel and the rest of the list forms the new list
    (def current-stack (get-prop current-loc "camel-stack"))
@@ -293,7 +307,7 @@
       ;one finish betting card for each colour camel!
       (append-list finish-cards
         (create-obj (["colour" c]
-                     ["type" "camel-card"]
+                     ["type" "camel-bet"]
                      ["owner" client]))))
     (set-props
      player
