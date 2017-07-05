@@ -314,6 +314,43 @@
              (pop)
              )])
        #'(append start (append exprs ...) end))]))
+
+(define-syntax (foreach-reverse stx)
+  (syntax-parse stx
+    [(_ (var list-expr) exprs ...)
+     (with-syntax*
+       ([label (new-label)]
+        [continue (new-label)]
+        [id (symbol->string (syntax-e #'var))]
+        [idx (new-var)]
+        [start
+         #'`(
+             ,(eval-arg list-expr)
+             ;test there are items otherwise skip
+             (p_len)
+             (ldval 0)
+             (beq continue)
+             (p_len)
+             (ldval -1)
+             (add)
+             (stvar idx)
+             (label ldvar idx)
+             (p_index)
+             (stvar id)
+             )]
+        [end
+         #'`(
+             (ldval -1)
+             (ldval 1)  ; decrease loop index
+             (ldvar idx)
+
+             (sub)
+             (p_stvar idx)
+             (bne label)
+             (continue)
+             (pop)
+             )])
+       #'(append start (append exprs ...) end))]))
      
 (define-syntax (get-prop stx)
   (syntax-parse stx
@@ -488,7 +525,7 @@
          ,(eval-arg location)
          (moveobj))]))
           
-(define-syntax (def-req stx)
+(define-syntax (def-flow stx)
   (syntax-parse stx
     [(_ name title)
      (with-syntax
@@ -497,7 +534,7 @@
            (genreq)
            (stvar id)))]))
 
-(define-syntax (add-req-action stx)
+(define-syntax (add-flow-action stx)
   (syntax-parse stx
     [(_ req id text)
      #'`(,(eval-arg req)
@@ -506,12 +543,12 @@
            (addaction)
            )]))
 
-(define-syntax (cut stx)
+(define-syntax (flow-end stx)
   (syntax-parse stx
     [(_)
      #'`((cut))]))
 
-(define-syntax (suspend stx)
+(define-syntax (flow stx)
   (syntax-parse stx
     [(_ req client)
      #'`(,(eval-arg req)
@@ -529,10 +566,6 @@
   (syntax-parse stx
     [(_ var)
      #'`(,(eval-arg var))]))
-
-;; (begin-for-syntax
-;;   (define-syntax (reverse-args stx)
-;;                        (datum->syntax stx (reverse (cdr (syntax->datum stx))))))
 
 (define-syntax (call stx)
   (syntax-parse stx
@@ -582,6 +615,12 @@
     [(_ location)
      #'`(,(eval-arg location)
          (getlocsiblings))]))
+
+(define-syntax (get-children stx)
+  (syntax-parse stx
+    [(_ location)
+     #'`(,(eval-arg location)
+         (getlocchildren))]))
 
 (define-syntax (get-loc stx)
   (syntax-parse stx
@@ -767,7 +806,7 @@
          (getobjs)
          )]))
 
-(define-syntax (suspend-dispatch stx)
+(define-syntax (flow-dispatch stx)
   (syntax-parse stx
     [(_ req client ([test-expr body-expr]...))
      (with-syntax*
@@ -880,8 +919,30 @@
       #''()]
     [(_ v-expr end)
      #'`(,(eval-arg v-expr)
-         (bne end))])) 
-    
+         (bne end))]))
+
+(define-syntax (has-key-value stx)
+  (syntax-parse stx
+    [(_ obj-expr key-expr val-expr)
+     (with-syntax ([x (new-var)]
+                   [end (new-label)]
+                   [f-end (new-label)])
+     #'`(,(eval-arg obj-expr)
+         ,(eval-arg key-expr)
+         (p_stvar x)
+         (p_contains)
+         (ldvalb 0)
+         (beq f-end)
+         (ldvar x)
+         (ldprop)
+         ,(eval-arg val-expr)
+         (ceq)
+         (branch end)
+         (f-end)
+         (ldvalb 0)
+         (pop)
+         (end)))]))                             
+
 (define-syntax (obj-match stx)
   (syntax-parse stx 
     [(_ obj-expr
@@ -917,11 +978,21 @@
          (end)
          (pop)
          ))]))
+
+
+(define-syntax (++ stx)
+  (syntax-parse stx
+    [(_ var)  #'(def var (add 1 var))]))
+
+(define-syntax (-- stx)
+  (syntax-parse stx
+    [(_ var)  #'(def var (sub 1 var))]))
+
+
 ;; (scurry
 ;;  (def (main)
-;;    (def test "hello world")
-;;    (dbgl (starts-with test "hello"))
-;;    (dbgl (ends-with test "hello"))
-;;    (dbgl (ends-with test "world"))
-;;    (dbgl (contains test "lo wo"))
+;;    (def-list x 1 2 3 4 5)
+;; ;   (foreach (v x) (dbgl v))
+;;    (foreach-reverse (v x) (dbgl v))
 ;;    ))
+            
