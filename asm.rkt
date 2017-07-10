@@ -555,6 +555,7 @@
          ,(eval-arg client)
          (suspend))]))
 
+
 (define-syntax (remove-list stx)
   (syntax-parse stx
     [(_ var key)
@@ -984,6 +985,7 @@
   (syntax-parse stx
     [(_ var)  #'(def var (add 1 var))]))
 
+
 (define-syntax (-- stx)
   (syntax-parse stx
     [(_ var)  #'(def var (sub 1 var))]))
@@ -991,8 +993,7 @@
 
 ;; (scurry
 ;;  (def (main)
-;;    (def-list x 1 2 3 4 5)
-;; ;   (foreach (v x) (dbgl v))
+;;    (def-list x)
 ;;    (foreach-reverse (v x) (dbgl v))
 ;;    ))
             
