@@ -320,6 +320,7 @@
          #'`((pending-function             
              label 
              load
+             (pop)
              ,body
              (ret))
            (lambda label))))

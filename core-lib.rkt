@@ -37,39 +37,25 @@
        (~ fold (λ (a b) (add a b)) inputs 0))
      
      (def-λ (map mapper inputs)
-       (~ fold
-          (λ (acc i)
-            (s-begin
-             (append-list acc (~ mapper i))
-             (s-return acc)))
-          inputs
-          '(createlist)))
+       (def out (s-list))
+       (foreach (i inputs)
+         (append-list out (~ mapper i)))
+       (s-return out))
 
      (def-λ (filter pred inputs)
-       (~ fold
-          (λ (acc i)
-            (s-if (~ pred i)
-              (s-begin
-               (append-list acc i)
-               (s-return acc))
-              (s-return acc)))
-          inputs
-          '(createlist)))
-
-     (def-λ (partition pred inputs)
-       (~ fold
-          (λ (acc i)
-            (s-begin
-             (s-if (~ pred i)
-              (~ append-prop-list "item0" acc i)
-              (~ append-prop-list "item1" acc i))
-             (s-return acc)))
-          inputs
-          (s-begin
-           (def-obj output)
-           (set-props output (["item0" '(createlist)]
-                              ["item1" '(createlist)]))
-           (s-return output))))
-
+       (def out (s-list))
+       (foreach (i inputs)
+         (s-when (~ pred i)
+           (append-list out i)))
+       (s-return out))
      
+     (def-λ (partition pred inputs)
+       (def x (s-list))
+       (def y (s-list))
+       (foreach (i inputs)
+         (s-if (~ pred i)         
+           (append-list x i)
+           (append-list y i)))
+       (tuple x y))
+
      ))
