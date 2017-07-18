@@ -7,6 +7,7 @@
 (require racket/string)
 (require (for-syntax racket/syntax))
 (provide (all-defined-out))
+(require threading)
 (define-syntax (wdb stx)
   (syntax-parse stx
     ([_ msg args ...] #'(writeln (format msg args ...)))))
@@ -220,7 +221,7 @@
            ))))))
 
 
-(define (write-file loc data)
+(define (fully-assemble data)
   (writeln "attempting to assemble..")
   ;program
   (assemble data)
@@ -237,8 +238,11 @@
          (context-program asm)
          (+ 1 source i)
          b
-         ))))
+         )))))
     
+  
+(define (write-file loc data)
+  (fully-assemble data)
     ; string table is written as a 32 bit int number of strings, followed by
   ; each string prefixed with its length
   ;(wdb "labels ~a" (context-labels asm))
@@ -450,6 +454,8 @@
     [(_ name)
      (with-syntax ([name  (symbol->string (syntax-e #'name))])
        #'name)]))
+
+
 
 (define-syntax (def stx)
   (syntax-parse stx
@@ -1019,7 +1025,7 @@
   (syntax-parse stx
     [(_ var)  #'(def var (sub 1 var))]))
 
-(define-syntax (app stx)
+(define-syntax (~ stx)
   (syntax-parse stx
     [(_ f args ...)
      #'`(,(eval-arg f)
@@ -1033,9 +1039,7 @@
     [(_ exprs ... )
        ;; (writeln "original")
        ;; (writeln (syntax->datum #'(exprs ...)))
-
-     (let* ([e (local-expand #'((def (main) exprs ...)) 'expression (list))])
-
+     (let* ([e (local-expand #'(def (main) (exprs ...)) 'expression (list))])
        (define (folder input acc funcs)
          (define-values (a b)
            (for/fold
@@ -1104,43 +1108,104 @@
     ))
 
 
-(define-syntax (s-λ stx)
+(define-syntax (λ stx)
   (syntax-parse stx
-    [(_ (arg args ...+ ) body ...)
+    [(_ (arg args ...+ ) body ...+)
        #'(s-lambda (arg)
            (s-return
-             (s-λ (args ...) body ...)))]
-    [(_ (arg) body ...)
+             (λ (args ...) body ...)))]
+    [(_ (arg) body ...+)
         #'(s-lambda (arg)
             (s-begin
-             body ...))]))
+             body ...))]
+    [(_ (body ...))
+     #'(λ (_) (body ...))]))
 
 (define-syntax (def-λ stx)
   (syntax-parse stx
     [(_ (name args ...) body ...)
-     #'(def name (s-λ (args ...) body ...))]))
+     #'(def name (λ (args ...) body ...))]))
+
+(define-syntax (core-lib stx)
+  #'(
+     (def-λ (mod-prop-list mapper key obj)
+       (def list (get-prop obj key))
+       (~ mapper list)
+       (set-prop obj key list))
+
+     (def-λ (append-prop-list key obj item)
+       (~ mod-prop-list (λ (append-list _ item)) key obj))
+
+     (def-λ (remove-prop-list key obj item)
+       (~ mod-prop-list (λ (remove-list _ item)) key obj)) 
+
+     (def-λ (fold folder inputs acc)
+       (foreach (i inputs)
+                (def acc (~ folder acc i)))
+       (s-return acc))
+
+     (def-λ (sum inputs)
+       (~ fold (λ (a b) (add a b)) inputs 0))
+     
+     (def-λ (map mapper inputs)
+       (~ fold
+          (λ (acc i)
+            (s-begin
+             (append-list acc (~ mapper i))
+             (s-return acc)))
+          inputs
+          '(createlist)))
+
+     (def-λ (filter pred inputs)
+       (~ fold
+          (λ (acc i)
+            (s-if (~ pred i)
+                  (s-begin
+                   (append-list acc i)
+                   (s-return acc))
+                  (s-return acc)))
+          inputs
+          '(createlist)))
+
+     (def-λ (partition pred inputs)
+       (~ fold
+          (λ (acc i)
+            (s-begin
+             (s-if (~ pred i)
+                   (~ append-prop-list "item1" acc i)
+                   (~ append-prop-list "item2" acc i))
+             (s-return acc)))
+          inputs
+          (s-begin
+           (def-obj output)
+           (set-props output (["item1" '(createlist)]
+                              ["item2" '(createlist)]))
+           (s-return output))))
+
+     
+     ))
+
+(define-syntax (import stx)
+  (syntax-parse stx
+    [(_ lib) #'lib]))
+      
+
 
 (scurry
- (def-λ (adder x y)
-    (add x y))
-
- (def-λ (fold folder inputs acc)
-  (foreach (i inputs)
-    (def acc (app folder acc i)))
-  (s-return acc))
-
- ;multi arg lambda
- (def-λ (sum inputs)
-   (app fold
-        (s-λ (x y) (add x y))
-        inputs
-        0))
-
- ;or use adder function
- (def-λ (sum inputs)
-   (app fold adder inputs 0))
- 
+ (import core-lib)
+  
  (def-list numbers 1 2 3 4 5)
+ (def some-number 42)
+ 
+ (~>>
+  ;pipeline
+  numbers
+  (~ filter (λ (gt _ 3)))
+  (~ map    (λ (add _ some-number)))
+  (dbgl))
 
- (dbgl "SUM : " (app sum numbers)))
+  (def x (~ partition (λ (gt _ 3)) numbers))
+  (dbgl " x " (get-prop x "item1"))
+  (dbgl " y " (get-prop x "item2"))
+ )
 
