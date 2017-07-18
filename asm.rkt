@@ -1,5 +1,6 @@
 #lang racket
 (require (for-syntax syntax/parse))
+(require (for-syntax racket/format))
 (require racket/match)
 (require (for-syntax racket/list))
 (require (for-syntax racket/match))
@@ -72,7 +73,7 @@
     [(string? in) 
       (string-index in)]
     [(is-label? in)
-     (wdb "setting label target ~a ~a" in (context-max-assembled asm))
+     ;(wdb "setting label target ~a ~a" in (context-max-assembled asm))
       (set-context-awaiting-labels! asm
        (cons
         (cons (symbol->string in) (context-max-assembled asm))
@@ -230,7 +231,7 @@
   (for ([targ (context-awaiting-labels asm)])
     (let ([source (cdr targ)]
           [dest (hash-ref (context-labels asm) (car targ))])
-      (wdb "label ~a source ~a dest ~a" targ source dest)      
+      ;(wdb "label ~a source ~a dest ~a" targ source dest)      
       (for ([i (in-naturals)]
             [b (get-int-bytes (- dest source))])
 ;        (wdb "offset ~a" b)
@@ -297,8 +298,33 @@
            (appendlist)) ...)
          )]))
 
+
 (define-syntax (s-lambda stx)
   (syntax-parse stx
+    [(_ ((arg ...)) body)
+     ;tuple destructure
+     (let*
+         ([args (flatten (syntax->datum #'(arg ...)))]          
+          [loaders         
+           (for/list ([i (in-naturals)]
+                      [s args])
+             (with-syntax
+               ([prop-name (string-append "item" (~a i))]
+                [arg-name (symbol->string s)])
+               #'((ldvals prop-name)
+                  (p_ldprop)
+                  (stvar arg-name))))])
+       (with-syntax
+         ([load (datum->syntax stx loaders)]
+          [label (new-label)])
+         #'`((pending-function             
+             label 
+             load
+             ,body
+             (ret))
+           (lambda label))))
+            
+       ]
     [(_ (arg) body)
      (with-syntax
        ([label (new-label)])
@@ -455,19 +481,50 @@
      (with-syntax ([name  (symbol->string (syntax-e #'name))])
        #'name)]))
 
-
-
+(define-syntax (tuple stx)
+  ;not sure how to do this nicely for n-tuples yet so ill just do
+  ; it manually for a few for now
+  (syntax-parse stx
+    [(_ a b)
+     #'`((createobj)         
+         (ldvals "item0")
+         ,(eval-arg a)
+         (p_stprop)
+         (ldvals "item1")
+         ,(eval-arg b)
+         (p_stprop))]
+    [(_ a b)
+     #'`((createobj)         
+         (ldvals "item0")
+         ,(eval-arg a)
+         (p_stprop)
+         (ldvals "item1")
+         ,(eval-arg b)
+         (p_stprop)
+         (ldvals "item2")
+         ,(eval-arg a)
+         (p_stprop))]))
+         
 (define-syntax (def stx)
   (syntax-parse stx
-    [(_ (name args ...) body ...)
-     (with-syntax
-       ([func (string->symbol (string-append (symbol->string (syntax-e #'name)) ":"))])
-       ;function definition.
-       #'`((func) ; label
-           ; pop values off the stack and save to locals
-           ((stvar ,(var-name args)) ...)
-           ,body ...
-           (ret)))]
+    [(_ (names ...) expr )
+     ;tuple extraction
+     (let*
+         ([args (flatten (syntax->datum #'(names ...)))]          
+          [loaders         
+           (for/list ([i (in-naturals)]
+                      [s args])
+             (with-syntax
+               ([prop-name (string-append "item" (~a i))]
+                [arg-name (symbol->string s)])
+               #'((ldvals prop-name)
+                  (p_ldprop)
+                  (stvar arg-name))))])
+       (with-syntax ([loadd (datum->syntax stx loaders)])
+       #'`(,(eval-arg expr)
+           loadd
+           (pop))))]
+             
     [(_ name expr)
      (with-syntax*
        ([id (symbol->string (syntax-e #'name))])
@@ -519,14 +576,14 @@
         ((,(eval-arg expr)
           (values))))]))
          
-(define-syntax (def-list stx)
-  (syntax-parse stx    
-    [(_ name exprs ...)
-     (with-syntax*
-       ([id (symbol->string (syntax-e #'name))])
+(define-syntax (s-list stx)
+  (syntax-parse stx
+    [(_) #''(createlist)]
+    [(_ expr ...)
      #'`((createlist)
-         (stvar id)         
-         ,(append-list name exprs ...)))]))
+         ((,(eval-arg expr)
+          (p_appendlist)) ...)
+         )]))
 
 (define-syntax (def-obj stx)
   (syntax-parse stx
@@ -1039,7 +1096,7 @@
     [(_ exprs ... )
        ;; (writeln "original")
        ;; (writeln (syntax->datum #'(exprs ...)))
-     (let* ([e (local-expand #'(def (main) (exprs ...)) 'expression (list))])
+     (let* ([e (local-expand #'('(main:) (exprs ...) '(ret)) 'expression (list))])
        (define (folder input acc funcs)
          (define-values (a b)
            (for/fold
@@ -1107,10 +1164,9 @@
 
     ))
 
-
 (define-syntax (λ stx)
   (syntax-parse stx
-    [(_ (arg args ...+ ) body ...+)
+    [(_ (arg args ...+ ) body ...+)     
        #'(s-lambda (arg)
            (s-return
              (λ (args ...) body ...)))]
@@ -1126,86 +1182,8 @@
     [(_ (name args ...) body ...)
      #'(def name (λ (args ...) body ...))]))
 
-(define-syntax (core-lib stx)
-  #'(
-     (def-λ (mod-prop-list mapper key obj)
-       (def list (get-prop obj key))
-       (~ mapper list)
-       (set-prop obj key list))
-
-     (def-λ (append-prop-list key obj item)
-       (~ mod-prop-list (λ (append-list _ item)) key obj))
-
-     (def-λ (remove-prop-list key obj item)
-       (~ mod-prop-list (λ (remove-list _ item)) key obj)) 
-
-     (def-λ (fold folder inputs acc)
-       (foreach (i inputs)
-                (def acc (~ folder acc i)))
-       (s-return acc))
-
-     (def-λ (sum inputs)
-       (~ fold (λ (a b) (add a b)) inputs 0))
-     
-     (def-λ (map mapper inputs)
-       (~ fold
-          (λ (acc i)
-            (s-begin
-             (append-list acc (~ mapper i))
-             (s-return acc)))
-          inputs
-          '(createlist)))
-
-     (def-λ (filter pred inputs)
-       (~ fold
-          (λ (acc i)
-            (s-if (~ pred i)
-                  (s-begin
-                   (append-list acc i)
-                   (s-return acc))
-                  (s-return acc)))
-          inputs
-          '(createlist)))
-
-     (def-λ (partition pred inputs)
-       (~ fold
-          (λ (acc i)
-            (s-begin
-             (s-if (~ pred i)
-                   (~ append-prop-list "item1" acc i)
-                   (~ append-prop-list "item2" acc i))
-             (s-return acc)))
-          inputs
-          (s-begin
-           (def-obj output)
-           (set-props output (["item1" '(createlist)]
-                              ["item2" '(createlist)]))
-           (s-return output))))
-
-     
-     ))
-
 (define-syntax (import stx)
   (syntax-parse stx
     [(_ lib) #'lib]))
       
-
-
-(scurry
- (import core-lib)
-  
- (def-list numbers 1 2 3 4 5)
- (def some-number 42)
- 
- (~>>
-  ;pipeline
-  numbers
-  (~ filter (λ (gt _ 3)))
-  (~ map    (λ (add _ some-number)))
-  (dbgl))
-
-  (def x (~ partition (λ (gt _ 3)) numbers))
-  (dbgl " x " (get-prop x "item1"))
-  (dbgl " y " (get-prop x "item2"))
- )
 
