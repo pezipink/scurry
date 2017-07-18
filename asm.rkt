@@ -1,6 +1,8 @@
 #lang racket
 (require (for-syntax syntax/parse))
 (require racket/match)
+(require (for-syntax racket/list))
+(require (for-syntax racket/match))
 (require racket/trace)
 (require racket/string)
 (require (for-syntax racket/syntax))
@@ -9,8 +11,15 @@
   (syntax-parse stx
     ([_ msg args ...] #'(writeln (format msg args ...)))))
 
-(struct context (program max-assembled awaiting-labels labels string-table max-string) #:mutable )
-(define asm (context (make-vector (* 1024 1024) 0) 0 (list) (make-hash) (make-hash) -1))
+(struct context
+  (program
+   max-assembled
+   awaiting-functions
+   awaiting-labels
+   labels
+   string-table
+   max-string) #:mutable )
+(define asm (context (make-vector (* 1024 1024) 0) 0 (make-hash) (list) (make-hash) (make-hash) -1))
 
 (begin-for-syntax
   (define num (box 0))
@@ -45,6 +54,7 @@
 (define (write-vec-byte b v)
   (let ([m (context-max-assembled asm)])
     (vector-set! v m b)
+;    (wdb "maxasm++")
     (set-context-max-assembled! asm (+ 1 m))))
 
 (define (grow-vector)
@@ -61,7 +71,7 @@
     [(string? in) 
       (string-index in)]
     [(is-label? in)
-     ;(wdb "setting label target ~a" in)
+     (wdb "setting label target ~a ~a" in (context-max-assembled asm))
       (set-context-awaiting-labels! asm
        (cons
         (cons (symbol->string in) (context-max-assembled asm))
@@ -88,7 +98,7 @@
       (string-suffix? (symbol->string s) ":")))
 
 (define (get-bytes input)
-  (wdb "~a" input)
+  (wdb "~a : ~a" (context-max-assembled asm) input)
   (let* ([next
           (match input
             [(list-rest (? is-label? (app symbol->string lab) ) xs)
@@ -139,6 +149,7 @@
         [(list 'getobjs) 39]
         [(list 'delprop) 40]
         [(list 'p_delprop) 41]
+
         [(list 'delobj) 42]
         [(list 'moveobj) 43]
         [(list 'p_moveobj) 44]
@@ -183,10 +194,15 @@
         [(list 'suspend) 83]
         [(list 'cut) 84]
         [(list 'say) 85]
-        [(list 'call x)    (flatten (list 86 (get-int-bytes(check-string x))))]
-        [(list 'ret) 87]
-        [(list 'dbg) 88]
-        [(list 'dbgl) 89]
+        [(list 'pushscope) 86]
+        [(list 'popscope) 87]
+        [(list 'lambda x )
+         (flatten (list 88 (get-int-bytes(check-string x))))]
+        [(list 'apply) 89]
+        [(list 'p_apply) 90]
+        [(list 'ret) 91]
+        [(list 'dbg) 92]
+        [(list 'dbgl) 93]
         ))))
 
 (define (assemble opcodes)
@@ -203,7 +219,9 @@
            [(not (void? code)) (write-vec-byte code v)]
            ))))))
 
+
 (define (write-file loc data)
+  (writeln "attempting to assemble..")
   ;program
   (assemble data)
   ;(wdb "assmebled")
@@ -211,9 +229,10 @@
   (for ([targ (context-awaiting-labels asm)])
     (let ([source (cdr targ)]
           [dest (hash-ref (context-labels asm) (car targ))])
-      ;(wdb "label ~a source ~a dest ~a" targ source dest)      
+      (wdb "label ~a source ~a dest ~a" targ source dest)      
       (for ([i (in-naturals)]
             [b (get-int-bytes (- dest source))])
+;        (wdb "offset ~a" b)
         (vector-set!
          (context-program asm)
          (+ 1 source i)
@@ -248,13 +267,6 @@
   (close-output-port out)
   (wdb "finished"))
 
-(define-syntax (scurry stx)
-  (syntax-parse stx
-    [(_ exprs ... )     
-     #'(begin
-         (let ([program (append exprs ... )])
-           (write-file "c:\\temp\\test.scur" program)))]))
-
 (define-syntax (say-client stx)
   (syntax-parse stx
     [(_ arg msg)
@@ -281,6 +293,23 @@
            (appendlist)) ...)
          )]))
 
+(define-syntax (s-lambda stx)
+  (syntax-parse stx
+    [(_ (arg) body)
+     (with-syntax
+       ([label (new-label)])
+       #'`(
+           ;tell the assembler to create this later
+           (pending-function             
+             label 
+             (stvar ,@(var-name arg))
+             ,body
+             (ret))
+           (lambda label)
+          )
+
+       )]))
+     
 (define-syntax (foreach stx)
   (syntax-parse stx
     [(_ (var list-expr) exprs ...)
@@ -313,7 +342,7 @@
              (continue)
              (pop)
              )])
-       #'(append start (append exprs ...) end))]))
+       #'(start exprs ... end))]))
 
 (define-syntax (foreach-reverse stx)
   (syntax-parse stx
@@ -350,7 +379,7 @@
              (continue)
              (pop)
              )])
-       #'(append start (append exprs ...) end))]))
+       #'(start  exprs ... end))]))
      
 (define-syntax (get-prop stx)
   (syntax-parse stx
@@ -856,7 +885,7 @@
                  
 (define-syntax (s-and stx)
   (syntax-parse stx
-    [(_ expr ...)
+    [(_ expr ...)2
      (with-syntax*
        ([when-false (new-label)]
         [end (new-label)]
@@ -990,10 +1019,128 @@
   (syntax-parse stx
     [(_ var)  #'(def var (sub 1 var))]))
 
+(define-syntax (app stx)
+  (syntax-parse stx
+    [(_ f args ...)
+     #'`(,(eval-arg f)
+         ((,(eval-arg args)
+           (apply)) ...)
+         )]))
 
-;; (scurry
-;;  (def (main)
-;;    (def-list x)
-;;    (foreach-reverse (v x) (dbgl v))
-;;    ))
-            
+
+(define-syntax (scurry stx)
+  (syntax-parse stx
+    [(_ exprs ... )
+       ;; (writeln "original")
+       ;; (writeln (syntax->datum #'(exprs ...)))
+
+     (let* ([e (local-expand #'((def (main) exprs ...)) 'expression (list))])
+
+       (define (folder input acc funcs)
+         (define-values (a b)
+           (for/fold
+               ([acc acc]
+                [funcs funcs])
+               ([node input])
+             (cond
+               [(list? node)
+                (match node
+                  [(list-rest '#%app (or 'list 'list*) (list 'quote 'pending-function) tail)
+  ;                 (writeln "helloo")
+ ;                  (writeln tail)
+                   (let-values ([(a b) (folder tail null null)])
+                     ;todo: handle the nested lambdas (or does it already??)
+                     ;; (writeln "lambda process")
+                     ;; (writeln a)
+                     ;; (writeln "B")
+                     ;; (writeln b)
+                     (values acc (cons b (cons a funcs))))]
+                  
+                  [(list
+                    '#%app
+                    (or 'list* 'list)
+                    (list 'quote (and (or 'stvar 'p_stvar 'ldvar 'p_ldvar) op))
+                    (list 'quote x))
+                   (values (cons (list op x) acc) funcs)]
+                  
+                  [_
+                   (let-values ([(a b) (folder node null null)])
+                      (values (cons a acc) (cons b funcs)))])
+                  
+                  
+                ;; (if (and (not (empty? node))
+                ;;          (eq? (car node) '))
+                ;;     (values acc (cons node funcs))
+
+
+                ]
+               ;drop all this stuff we arent interested in
+               [(eq? node '#%app) (values acc funcs)]
+               [(eq? node 'list*) (values acc funcs)]
+               [(eq? node 'list) (values acc funcs)]
+               [(eq? node 'quote) (values acc funcs)]
+               [else (values (cons node acc) funcs)])
+             ))
+         (values (reverse a) (reverse b)))
+
+       ;; (writeln "original2")
+       ;; (writeln (syntax->datum e))
+       ;; (writeln "")
+;       (writeln "res")
+       (define-values (a b) (folder (syntax->datum e) null null))     
+       ;; (writeln a)
+       ;; (writeln "")
+       ;; (writeln "res2")
+       ;; (writeln b)
+       ;; (writeln "")
+       ;(writeln (datum->syntax stx  a))
+       ;  (writeln (syntax->datum e)))
+       
+       (with-syntax ([yay (datum->syntax stx (append a b))])
+         #'(write-file "c:\\temp\\test.scur" 'yay))
+       )     
+     ]
+
+    ))
+
+
+(define-syntax (s-λ stx)
+  (syntax-parse stx
+    [(_ (arg args ...+ ) body ...)
+       #'(s-lambda (arg)
+           (s-return
+             (s-λ (args ...) body ...)))]
+    [(_ (arg) body ...)
+        #'(s-lambda (arg)
+            (s-begin
+             body ...))]))
+
+(define-syntax (def-λ stx)
+  (syntax-parse stx
+    [(_ (name args ...) body ...)
+     #'(def name (s-λ (args ...) body ...))]))
+
+(scurry
+ (def-λ (adder x y)
+    (add x y))
+
+ (def-λ (fold folder inputs acc)
+  (foreach (i inputs)
+    (def acc (app folder acc i)))
+  (s-return acc))
+
+ ;multi arg lambda
+ (def-λ (sum inputs)
+   (app fold
+        (s-λ (x y) (add x y))
+        inputs
+        0))
+
+ ;or use adder function
+ (def-λ (sum inputs)
+   (app fold adder inputs 0))
+ 
+ (def-list numbers 1 2 3 4 5)
+
+ (dbgl "SUM : " (app sum numbers)))
+

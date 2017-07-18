@@ -36,8 +36,8 @@
    (def-list colours "green" "blue" "orange" "yellow" "white")
    (set-global "race-on" 1)
 
-   (call (init-locations))
-   (call (setup-players))
+   (apply (init-locations true))
+   (apply (setup-players true))
 
    ;create the camels
    (def-obj camels) ; lookup dict
@@ -47,6 +47,7 @@
    (foreach (c colours)
      (def-obj camel (["type" "camel"]
                      ["colour" c]))
+     
      (def rnd-track (add "track" (rndi 1 4)))
      (move-obj camel (get-loc "track1"))
      (append-list stack camel)
@@ -58,7 +59,7 @@
 
    (foreach-reverse
     (c stack)
-    (call (move-camel c (rndi 0 3)))
+    (apply (move-camel c (rndi 0 3)))
        (dbgl "stack is now" stack)
     )
    
@@ -86,7 +87,7 @@
          (s-unless (list-zero remaining-pyramid-cards)
            (s-begin
             (def-flow msg "choose an action")
-            (call (add-base-actions msg p))            
+            (apply (add-base-actions msg p))            
             (def resp (flow msg client))
             (dbgl "got response " resp)
             (s-cond            
@@ -94,20 +95,20 @@
               (s-begin
                (flow-end)
                (dbgl "player chose a pyramid card")
-               (call (play-pyramid-card client)))]
+               (apply (play-pyramid-card client)))]
 
              [(contains resp "trap")
               ;further suspend to chose the location
               (s-begin
                (dbgl "calling trap..")
-               (call (play-trap p (contains resp "oasis"))))]
+               (apply (play-trap p (contains resp "oasis"))))]
              
              [(contains resp "-leg")
               (s-begin
                (flow-end)
                (def colour (substring resp 0 (index-of resp "-")))
                (dbgl "player chose to bet on " colour " for this leg")
-               (call (take-leg-card p colour))
+               (apply (take-leg-card p colour))
                )]
              
              [else (dbgl "player chose something else : " resp)])
@@ -117,7 +118,7 @@
               (dbgl "leg over!")
               ;reset dice
               (def-list camel-dice "green" "blue" "orange" "yellow" "white")
-              (def camel-positions (call (get-camel-positions)))
+              (def camel-positions (apply (get-camel-positions true)))
               (set-global "camel-dice" camel-dice)
               ; score points and move leg cards / traps back
                 
@@ -135,7 +136,7 @@
 
    ; race over
    (dbgl "children")
-   (def camel-positions (call (get-camel-positions)))
+   (def camel-positions (apply (get-camel-positions)))
    (foreach(c (get-children "track"))
            (dbgl c))
    (foreach (c (vals camels))
@@ -146,7 +147,7 @@
    
    )
 
- (def (get-camel-positions)
+ (def (get-camel-positions b)
    (def-list camel-positions)
    (foreach-reverse (t (~> "track" get-loc get-children))
     (foreach-reverse (c (get-prop (get-loc t) "camel-stack"))
@@ -187,7 +188,7 @@
      (s-if is-oasis?
            "where do you wish to place your oasis?"
            "where do you wish to place your mirage?"))
-   (call (build-trap-location-actions trap-msg is-oasis?))
+   (apply (build-trap-location-actions trap-msg is-oasis?))
    (dbgl "calling flow..")
    (def trap-resp (flow trap-msg client))
    (flow-end)
@@ -210,8 +211,8 @@
    (def track-index 1)
    (s-while (lt track-index 17)
      (def loc (get-loc (add "track" track-index)))
-     (def next (get-loc (call (get-sibling loc "next"))))
-     (def prev (get-loc (call (get-sibling loc "prev"))))
+     (def next (get-loc (apply (get-sibling loc "next"))))
+     (def prev (get-loc (apply (get-sibling loc "prev"))))
      (def cam (get-prop loc "camel-stack"))
      (s-when
       (s-and
@@ -237,7 +238,7 @@
  (def (take-leg-card player colour)
    (def client (get-prop player "clientid"))
    (def loc (get-loc (add colour "-bets")))
-   (def card (call (pop-prop-list "leg-cards" loc)))
+   (def card (apply (pop-prop-list "leg-cards" loc)))
    (move-obj card (get-loc client))
    (dbgl " player " player " took leg betting card for " (get-prop card "amount")))
 
@@ -253,7 +254,7 @@
    (def camel-dice (get-global "camel-dice"))
    (def new-list (remove-list camel-dice (nth i camel-dice)))
    (set-global "camel-dice" new-list)               
-   (call
+   (apply
     (move-camel
      (get-prop camels (nth i camel-keys)) (rndi 1 4))))
 
@@ -281,7 +282,7 @@
     (def cnt 0)
     (s-while
      (lt cnt amount)
-     (def sib (call (get-sibling target-loc "next")))
+     (def sib (apply (get-sibling target-loc "next")))
      (s-when (eq "finish" (get-prop sib "next"))
              (set-global "race-on" 0))
      (def target-loc (get-loc sib))
@@ -315,7 +316,7 @@
     (set-global "winning-loc" target-loc)
     ))
  
- (def (init-locations)
+ (def (init-locations b)
    (def root-loc (create-location "root"))
    ;entire track location
    (ignore (create-location "track" root-loc))
@@ -368,7 +369,7 @@
                             ["owner" ""])) pyramid-stack)
      ))
    
- (def (setup-players)
+ (def (setup-players b)
    ; get player list
    (def players (vals (get-players)))   
 
@@ -391,7 +392,7 @@
       ["trap" (create-obj (["type" "trap"]
                            ["owner" client]))]
       ["camel-cards" finish-cards]))
-    
+    (move-obj player client)
     ;debug text
     (dbg "player " client " now as the following props\n")
     (foreach (k (keys player))
@@ -412,5 +413,6 @@
         
 
 ) 
+
 
 
