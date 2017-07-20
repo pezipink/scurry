@@ -15,19 +15,8 @@
        (~ mod-global-list (λ (append-list _ item)) key))
 
      (def-λ (remove-global-list key item)
-       (~ mod-global-list (λ (remove-list _ item)) key)) 
+       (~ mod-global-list (λ (remove-list _ item)) key))
      
-     (def-λ (mod-prop-list mapper key obj)
-       (def list (get-prop obj key))
-       (~ mapper list)
-       (set-prop obj key list))
-
-     (def-λ (append-prop-list key obj item)
-       (~ mod-prop-list (λ (append-list _ item)) key obj))
-
-     (def-λ (remove-prop-list key obj item)
-       (~ mod-prop-list (λ (remove-list _ item)) key obj)) 
-
      (def-λ (fold folder inputs acc)
        (foreach (i inputs)
          (def acc (~ folder acc i)))

@@ -1,5 +1,7 @@
 #lang racket
+(require syntax/parse/define)
 (require (for-syntax syntax/parse))
+
 (require (for-syntax racket/format))
 (require racket/match)
 (require (for-syntax racket/list))
@@ -9,9 +11,9 @@
 (require (for-syntax racket/syntax))
 (provide (all-defined-out))
 (require threading)
-(define-syntax (wdb stx)
-  (syntax-parse stx
-    ([_ msg args ...] #'(writeln (format msg args ...)))))
+(require (for-syntax threading))
+(define-syntax-parser wdb
+  ([_ msg args ...] #'(writeln (format msg args ...))))
 
 (struct context
   (program
@@ -83,11 +85,16 @@
 
 
 (define (get-int-bytes in)
-  (let ([a (arithmetic-shift (bitwise-and in #xFF000000) -24)]
-        [b (arithmetic-shift (bitwise-and in #xFF0000) -16)]
-        [c (arithmetic-shift (bitwise-and in #xFF00) -8)]
-        [d (bitwise-and in #xFF)])
-    (list a b c d)))
+  (let ([in (case in
+              [(#t) 1]
+              [(#f) 0]
+              [else in])])    
+    (let ([a (arithmetic-shift (bitwise-and in #xFF000000) -24)]
+          [b (arithmetic-shift (bitwise-and in #xFF0000) -16)]
+          [c (arithmetic-shift (bitwise-and in #xFF00) -8)]
+          [d (bitwise-and in #xFF)])
+      (list a b c d))))
+
   
 (define (write-int in out)
   (for ([b (get-int-bytes in)])
@@ -112,7 +119,8 @@
         [(list 'pop) 0]
         [(list 'ldval x)    (flatten (list 1 (get-int-bytes(check-string x))))]
         [(list 'ldvals x)    (flatten (list 2 (get-int-bytes(check-string x))))]
-        [(list 'ldvalb x)    (flatten (list 3 (get-int-bytes(check-string x))))]
+        [(list 'ldvalb x)
+                  (flatten (list 3 (get-int-bytes(check-string x))))]
         [(list 'ldvar x)    (flatten (list 4 (get-int-bytes(check-string x))))]
         [(list 'stvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
         [(list 'p_stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
@@ -482,6 +490,9 @@
      (with-syntax ([name  (symbol->string (syntax-e #'name))])
        #'name)]))
 
+
+
+
 (define-syntax (tuple stx)
   ;not sure how to do this nicely for n-tuples yet so ill just do
   ; it manually for a few for now
@@ -537,67 +548,55 @@
   (syntax-parse stx
     [(_ exprs ... ) #''((createlist))]))
 
-(define-syntax (eval-arg stx)
-  (syntax-parse stx
-    [(_ expr:id)
-     (with-syntax
-       ([id (symbol->string (syntax-e #'expr))])
-       ; if this is an identifier then it will be a string table lookup
-       ; to a variable       
-       #''((ldvar id)))]
-    [(_ expr:str)     
-     #''((ldvals expr))]
-    [(_ expr:integer)
-     #''((ldval expr))]
-    [(_ expr:boolean)
-     #''((ldvalb expr))]
-    [(_ expr)
-     ;otherwise evaluate it
-     #'`,expr ]))
+(define-syntax-parser eval-arg
+  [(_ expr:id)
+   #:with id (symbol->string (syntax-e #'expr))
+     ; if this is an identifier then it will be a string table lookup
+     ; to a variable       
+     #''((ldvar id))]
+  [(_ expr:str)     
+   #''((ldvals expr))]
+  [(_ expr:integer)
+   #''((ldval expr))]
+  [(_ expr:boolean)
+   #''((ldvalb expr))]
+  [(_ expr)
+   ;otherwise evaluate it
+   #'`,expr ])
 
-(define-syntax (append-list stx)
-  (syntax-parse stx
-    [(_ var exprs ... )
-     #'`(
-        ((,(eval-arg var)
-          ,(eval-arg exprs)
-          (appendlist)) ...))]))
+(define-syntax-parser append-list
+  [(_ var exprs ... )
+   #'`(((,(eval-arg var)
+         ,(eval-arg exprs)
+         (appendlist)) ...))])
 
-(define-syntax (keys stx)
-  (syntax-parse stx
-    [(_ expr)
-     #'`(
-        ((,(eval-arg expr)
-          (keys))))]))
+(define-syntax-parser keys 
+  [(_ expr)
+   #'`(((,(eval-arg expr)
+         (keys))))])
 
-(define-syntax (vals stx)
-  (syntax-parse stx
-    [(_ expr)
-     #'`(
-        ((,(eval-arg expr)
-          (values))))]))
+(define-syntax-parser vals
+  [(_ expr)
+   #'`(((,(eval-arg expr)
+         (values))))])
          
-(define-syntax (s-list stx)
-  (syntax-parse stx
-    [(_) #''(createlist)]
-    [(_ expr ...)
-     #'`((createlist)
-         ((,(eval-arg expr)
-          (p_appendlist)) ...)
-         )]))
+(define-syntax-parser s-list  
+  [(_) #''(createlist)]
+  [(_ expr ...)
+   #'`((createlist)
+       ((,(eval-arg expr)
+         (p_appendlist)) ...)
+       )]) 
 
-(define-syntax (def-obj stx)
-  (syntax-parse stx
-    [(_ name)
-     (with-syntax*
-       ([id (symbol->string (syntax-e #'name))])
-       #'`((createobj)
-           (stvar id)))]
-    [(_ name ([key value]...))
-     (with-syntax*
-       ([id (symbol->string (syntax-e #'name))])
-       #'`(,(create-obj ([key value] ...))
-           (stvar id)))]))
+(define-syntax-parser def-obj
+  [(_ name)
+   #:with id (symbol->string (syntax-e #'name))
+   #'`((createobj)
+       (stvar id))]
+  [(_ name ([key value]...))
+   #:with id (symbol->string (syntax-e #'name))
+   #'`(,(create-obj ([key value] ...))
+       (stvar id))])
 
 (define-syntax (create-obj stx)
   (syntax-parse stx
@@ -618,43 +617,53 @@
          ,(eval-arg location)
          (moveobj))]))
           
-(define-syntax (def-flow stx)
-  (syntax-parse stx
-    [(_ name title)
-     (with-syntax
-       ([id (symbol->string (syntax-e #'name))])
-       #'`(,(eval-arg title)
-           (genreq)
-           (stvar id)))]))
+(define-syntax-parser def-flow
+  [(_ name title)
+   #:with id (symbol->string (syntax-e #'name)) 
+   #'`(,(eval-arg title)
+       (genreq)
+       (stvar id))])
 
-(define-syntax (add-flow-action stx)
-  (syntax-parse stx
-    [(_ req id text)
-     #'`(,(eval-arg req)
-         ,(eval-arg text)
-         ,(eval-arg id)
-           (addaction)
-           )]))
+(define-syntax-parser add-flow-action
+  [(_ req id text)
+   #'`(,(eval-arg req)
+       ,(eval-arg text)
+       ,(eval-arg id)
+       (addaction)
+       )])
 
-(define-syntax (flow-end stx)
-  (syntax-parse stx
-    [(_)
-     #'`((cut))]))
-
-(define-syntax (flow stx)
-  (syntax-parse stx
-    [(_ req client)
-     #'`(,(eval-arg req)
-         ,(eval-arg client)
-         (suspend))]))
+(define-syntax-parser flow-end
+  [(_) #'`((cut))])
 
 
-(define-syntax (remove-list stx)
-  (syntax-parse stx
-    [(_ var key)
-     #'`(,(eval-arg var)
-         ,(eval-arg key)
-         (removelist))]))
+(begin-for-syntax
+  (define-splicing-syntax-class flow-clauses
+    [pattern {~seq [eq-expr case-title-expr true-expr] ...}
+             #:with [n ...] (map ~a (range (length (attribute eq-expr))))]))
+
+(define-syntax-parser flow
+  [(_ client title-expr (expr:flow-clauses))
+   (with-syntax
+     ([flow-name (string->symbol (new-var))]
+      [resp-name (string->symbol (new-var))])
+   #'`(,(def-flow flow-name title-expr)
+       ((,(s-when expr.eq-expr
+          (add-flow-action flow-name expr.n expr.case-title-expr))...))  
+       ,(def resp-name (flow flow-name client))
+       ,(s-cond
+          [(eq resp-name expr.n) expr.true-expr] ...)
+       ))]
+  [(_ req client)
+   #'`(,(eval-arg req)
+       ,(eval-arg client)
+       (suspend))])
+
+
+(define-syntax-parser remove-list
+  [(_ var key)
+   #'`(,(eval-arg var)
+       ,(eval-arg key)
+       (removelist))])
 
 (define-syntax (s-return stx)
   (syntax-parse stx
@@ -677,14 +686,9 @@
      #'`(,(eval-arg location-name)
          (genloc))]
     [(_ location-name parent-location)
-;     childlocref :: parentloc :: newloc
-     #'`(
-         ;generate new location
-         ,(eval-arg location-name)
+     #'`(,(eval-arg location-name)
          (genloc)
-         ;load parent location
          ,(eval-arg parent-location)
-         ;create new link 
          (genlocref)
          (p_setlocparent))]
     ))
@@ -692,12 +696,8 @@
 (define-syntax (link-location stx)
   (syntax-parse stx
     [(_ host new-sibling ([key value]...))
-     ; locref :: sibling :: host
-     #'`(;first the host goes on the stack
-         ,(eval-arg host)
-         ;next the new sibling
-         ,(eval-arg new-sibling)
-         ;create location ref and its kvps
+     #'`(,(eval-arg host)
+         ,(eval-arg new-sibling)         
          (genlocref)         
          ((,(eval-arg key)
            ,(eval-arg value)
@@ -738,8 +738,7 @@
 (define-syntax (dbgl stx)
   (syntax-parse stx
     [(_ var ... last-var)
-     #'`((
-          (,(eval-arg var)
+     #'`(((,(eval-arg var)
            (dbg)) ...)
          ,(eval-arg last-var)
          (dbgl))]))
@@ -808,8 +807,8 @@
 (define-syntax (gt stx)
   (syntax-parse stx
     [(_ left right)
-     #'`(,(eval-arg left)
-         ,(eval-arg right)
+     #'`(,(eval-arg right)
+         ,(eval-arg left)
          (cgt))]))
 
 (define-syntax (lt stx)
@@ -900,34 +899,6 @@
          (getobjs)
          )]))
 
-(define-syntax (flow-dispatch stx)
-  (syntax-parse stx
-    [(_ req client ([test-expr body-expr]...))
-     (with-syntax*
-       ([var (new-var)]
-        [end (new-label)]
-        [(dispatch-case ...)
-         (with-syntax
-           ([skip-body (new-label)])
-           #'`((;load the response
-                (ldvar var)
-                ;evaluate the match expression
-                ,(eval-arg test-expr)
-                ;skip the body if not equal
-                (bne skip-body)
-                ; otherwise run the body and
-                ; jump to the end of the dispatcher 
-                ,(eval-arg body-expr)
-                (branch end)
-                (skip-body))...))])       
-       #'`(,(eval-arg req)
-           ,(eval-arg client)
-           (suspend)
-           (stvar var)
-           ,(dispatch-case ...)
-           (end))
-       )]))
-
 (define-syntax (s-or stx)
   (syntax-parse stx
     [(_ expr ...)
@@ -949,7 +920,7 @@
                  
 (define-syntax (s-and stx)
   (syntax-parse stx
-    [(_ expr ...)2
+    [(_ expr ...)
      (with-syntax*
        ([when-false (new-label)]
         [end (new-label)]
@@ -963,8 +934,7 @@
            (when-false ldvalb 0)
            (end)))]))
 
-(define-syntax (s-not stx)
-  (syntax-parse stx
+(define-syntax-parser s-not 
     [(_ expr )
      (with-syntax ([true-label (new-label)]
                    [end (new-label)])
@@ -975,37 +945,34 @@
          (branch end)
          (true-label)
          (ldvalb 0)
-         (end)))]))
+         (end)))])
 
-(define-syntax (s-cond-case stx)
-  (syntax-parse stx
-     [(_ test-expr then-body cond-end)
-      (with-syntax ([end (new-label)])
-        #'`(,(eval-arg test-expr)
-            (ldvalb 1)
-            (bne end)
-            ,(eval-arg then-body)
-            (branch cond-end)
-            (end)))]))
+(define-syntax-parser s-cond-case
+  [(_ test-expr then-body cond-end)
+   #:with end (new-label)
+   #'`(,(eval-arg test-expr)
+       (ldvalb 1)
+       (bne end)
+       ,(eval-arg then-body)
+       (branch cond-end)
+       (end))])
             
-(define-syntax (s-cond stx)
-  (syntax-parse stx #:datum-literals (else)                
+(define-syntax-parser s-cond #:datum-literals (else)
     [(_ [test-expr then-body] ...+
         [else else-body])
-     (with-syntax ([cond-end (new-label)])       
-       #'`(,(s-cond-case test-expr then-body cond-end) ...
+     #:with cond-end (new-label)
+     #'`(,(s-cond-case test-expr then-body cond-end) ...
            ,(eval-arg else-body)
-           (cond-end)))]
-     [(_ [test-expr then-body] ...+)
-      (with-syntax ([cond-end (new-label)])       
+           (cond-end))]
+    [(_ [test-expr then-body] ...+)
+     #:with cond-end (new-label)
        #'`(,(s-cond-case test-expr then-body cond-end) ...
-           (cond-end)))]))     
+           (cond-end))])     
 
-(define-syntax (prop-match-id stx)
-  (syntax-parse stx
-    ([_ id]
-     (with-syntax ([new-id (symbol->string (syntax-e #'id))])
-       #'new-id))))
+(define-syntax-parser prop-match-id
+  ([_ id]
+   #:with new-id (symbol->string (syntax-e #'id))
+   #'new-id))
 
 (define-syntax (prop-match-val stx)
   (syntax-parse stx #:datum-literals (*)
@@ -1078,113 +1045,172 @@
   (syntax-parse stx
     [(_ var)  #'(def var (add 1 var))]))
 
+(define-syntax-parser prop+=
+  [(_ obj key n)
+   #'`(,(eval-arg obj) ;this could be better if we had dup
+       ,(eval-arg key)     
+       ,(eval-arg obj)
+       ,(eval-arg key)     
+       (ldprop)
+       ,(eval-arg n)
+       (add)
+       (stprop)
+       )])
+
+(define-syntax-parser prop-=
+  [(_ obj key n)
+   #'`(,(eval-arg obj) ;this could be better if we had dup
+       ,(eval-arg key)     
+       ,(eval-arg n)
+       ,(eval-arg obj)
+       ,(eval-arg key)     
+       (ldprop)
+       (sub)
+       (stprop)
+       )])
 
 (define-syntax (-- stx)
   (syntax-parse stx
     [(_ var)  #'(def var (sub 1 var))]))
 
-(define-syntax (~ stx)
+(define-syntax-parser ~
+  [(_ f args ...)
+   #'`(,(eval-arg f)
+       ((,(eval-arg args) (apply)) ...))])
+
+(define-syntax-parser scurry
+  [(_ exprs ... )
+   ;; (writeln "original")
+   ;; (writeln (syntax->datum #'(exprs ...)))
+   (let* ([e (local-expand #'('(main:) (exprs ...) '(ret)) 'expression (list))])
+     (define (folder input acc funcs)
+       (define-values (a b)
+         (for/fold
+             ([acc acc]
+              [funcs funcs])
+             ([node input])
+           (cond
+             [(list? node)
+              (match node
+                [(list-rest '#%app (or 'list 'list*) (list 'quote 'pending-function) tail)
+                 ;                 (writeln "helloo")
+                 ;                  (writeln tail)
+                 (let-values ([(a b) (folder tail null null)])
+                   ;todo: handle the nested lambdas (or does it already??)
+                   ;; (writeln "lambda process")
+                   ;; (writeln a)
+                   ;; (writeln "B")
+                   ;; (writeln b)
+                   (values acc (cons b (cons a funcs))))]
+                
+                [(list
+                  '#%app
+                  (or 'list* 'list)
+                  (list 'quote (and (or 'stvar 'p_stvar 'ldvar 'p_ldvar) op))
+                  (list 'quote x))
+                 (values (cons (list op x) acc) funcs)]
+                
+                [_
+                 (let-values ([(a b) (folder node null null)])
+                   (values (cons a acc) (cons b funcs)))])
+              
+              
+              ;; (if (and (not (empty? node))
+              ;;          (eq? (car node) '))
+              ;;     (values acc (cons node funcs))
+
+
+              ]
+             ;drop all this stuff we arent interested in
+             [(eq? node '#%app) (values acc funcs)]
+             [(eq? node 'list*) (values acc funcs)]
+             [(eq? node 'list) (values acc funcs)]
+             [(eq? node 'quote) (values acc funcs)]
+             [else (values (cons node acc) funcs)])
+           ))
+       (values (reverse a) (reverse b)))
+
+     ;; (writeln "original2")
+     ;; (writeln (syntax->datum e))
+     ;; (writeln "")
+     ;       (writeln "res")
+     (define-values (a b) (folder (syntax->datum e) null null))     
+     ;; (writeln a)
+     ;; (writeln "")
+     ;; (writeln "res2")
+     ;; (writeln b)
+     ;; (writeln "")
+     ;(writeln (datum->syntax stx  a))
+     ;  (writeln (syntax->datum e)))
+     
+     (with-syntax ([yay (datum->syntax this-syntax (append a b))])
+       #'(write-file "c:\\temp\\test.scur" 'yay))
+     )     
+   ]
+
+  )
+
+(define-syntax-parser λ
+  [(_ (arg args ...+ ) body ...+)     
+   #'(s-lambda (arg) (s-return (λ (args ...) body ...)))]
+  [(_ (arg) body ...+)
+   #'(s-lambda (arg)(s-begin body ...))]
+  [(_ (body ...))
+   #'(λ (_) (body ...))])
+
+(define-syntax-parser def-λ
+  [(_ (name args ...) body ...)
+   #'(def name (λ (args ...) body ...))])
+
+(define-syntax-parser import
+    [(_ lib) #'lib])
+
+(begin-for-syntax
+  (define-splicing-syntax-class bindings #:datum-literals (:)
+    [pattern
+     ({~seq dest (~optional (~seq : key) #:defaults ([key #'dest])) } ...)
+     #:post
+     (~and
+      (~parse             
+       (key-str ...)
+       (map (λ (x) (~>> x syntax-e symbol->string))
+            (syntax->list #'(key ...))))
+      (~parse             
+       (dest-str ...)
+       (map (λ (x) (~>> x syntax-e symbol->string))
+            (syntax->list #'(dest ...)))))]))
+
+(define-syntax (extract stx)
   (syntax-parse stx
-    [(_ f args ...)
-     #'`(,(eval-arg f)
-         ((,(eval-arg args)
-           (apply)) ...)
-         )]))
+    [(_ ([binding:bindings input-expr] ... ) body ...)
+     #'`((
+          ((,(eval-arg input-expr)
+            (((ldvals binding.key-str)
+              (p_ldprop)
+              (stvar binding.dest-str)) ...)
+            (pop))  ...))
+         ,body ...)]))
 
 
-(define-syntax (scurry stx)
+(define-syntax (s-match stx)
+  ; todo: would be nicer withouht this λ (eq #t #t)
+  (define-syntax-class match-exp #:datum-literals (_)
+    (pattern (~or (~and _ (~bind [new-ex #'(λ (eq #t #t))]))
+                  (~and ex:expr (~bind [new-ex #'(λ ex)])))))  
   (syntax-parse stx
-    [(_ exprs ... )
-       ;; (writeln "original")
-       ;; (writeln (syntax->datum #'(exprs ...)))
-     (let* ([e (local-expand #'('(main:) (exprs ...) '(ret)) 'expression (list))])
-       (define (folder input acc funcs)
-         (define-values (a b)
-           (for/fold
-               ([acc acc]
-                [funcs funcs])
-               ([node input])
-             (cond
-               [(list? node)
-                (match node
-                  [(list-rest '#%app (or 'list 'list*) (list 'quote 'pending-function) tail)
-  ;                 (writeln "helloo")
- ;                  (writeln tail)
-                   (let-values ([(a b) (folder tail null null)])
-                     ;todo: handle the nested lambdas (or does it already??)
-                     ;; (writeln "lambda process")
-                     ;; (writeln a)
-                     ;; (writeln "B")
-                     ;; (writeln b)
-                     (values acc (cons b (cons a funcs))))]
-                  
-                  [(list
-                    '#%app
-                    (or 'list* 'list)
-                    (list 'quote (and (or 'stvar 'p_stvar 'ldvar 'p_ldvar) op))
-                    (list 'quote x))
-                   (values (cons (list op x) acc) funcs)]
-                  
-                  [_
-                   (let-values ([(a b) (folder node null null)])
-                      (values (cons a acc) (cons b funcs)))])
-                  
-                  
-                ;; (if (and (not (empty? node))
-                ;;          (eq? (car node) '))
-                ;;     (values acc (cons node funcs))
+    [(_ (arg-expr ...)
+        [ ex:match-exp ... true-exp  ] ...)
+     #' (s-cond
+         [(s-and (~ ex.new-ex arg-expr) ...) true-exp] ...)]))
 
+(define-syntax-parser extract-match
+  [(_ ([binding:bindings input-expr] ... ) body ...)
+   #'`((
+        ((,(eval-arg input-expr)
+          (((ldvals binding.key-str)
+            (p_ldprop)
+            (stvar binding.dest-str)) ...)
+          (pop))  ...))
+       ,(s-match (binding.dest ... ...) body ... ))])
 
-                ]
-               ;drop all this stuff we arent interested in
-               [(eq? node '#%app) (values acc funcs)]
-               [(eq? node 'list*) (values acc funcs)]
-               [(eq? node 'list) (values acc funcs)]
-               [(eq? node 'quote) (values acc funcs)]
-               [else (values (cons node acc) funcs)])
-             ))
-         (values (reverse a) (reverse b)))
-
-       ;; (writeln "original2")
-       ;; (writeln (syntax->datum e))
-       ;; (writeln "")
-;       (writeln "res")
-       (define-values (a b) (folder (syntax->datum e) null null))     
-       ;; (writeln a)
-       ;; (writeln "")
-       ;; (writeln "res2")
-       ;; (writeln b)
-       ;; (writeln "")
-       ;(writeln (datum->syntax stx  a))
-       ;  (writeln (syntax->datum e)))
-       
-       (with-syntax ([yay (datum->syntax stx (append a b))])
-         #'(write-file "c:\\temp\\test.scur" 'yay))
-       )     
-     ]
-
-    ))
-
-(define-syntax (λ stx)
-  (syntax-parse stx
-    [(_ (arg args ...+ ) body ...+)     
-       #'(s-lambda (arg)
-           (s-return
-             (λ (args ...) body ...)))]
-    [(_ (arg) body ...+)
-        #'(s-lambda (arg)
-            (s-begin
-             body ...))]
-    [(_ (body ...))
-     #'(λ (_) (body ...))]))
-
-(define-syntax (def-λ stx)
-  (syntax-parse stx
-    [(_ (name args ...) body ...)
-     #'(def name (λ (args ...) body ...))]))
-
-(define-syntax (import stx)
-  (syntax-parse stx
-    [(_ lib) #'lib]))
-      
 
