@@ -9,9 +9,37 @@
 (require racket/trace)
 (require racket/string)
 (require (for-syntax racket/syntax))
-(provide (all-defined-out))
+
 (require threading)
 (require (for-syntax threading))
+
+(provide
+ (except-out
+  (all-defined-out)
+  s-sort
+  s-when
+  s-if
+  s-list
+  s-return
+  s-begin
+  s-while
+  s-and
+;  s-shuffle
+  ))
+
+(provide
+ (rename-out
+  [s-sort sort]
+  [s-when when]
+  [s-if if]
+  [s-list list]
+  [s-return return]
+  [s-begin begin]
+  [s-while while]
+  [s-and and]
+          ))         
+
+
 (define-syntax-parser wdb
   ([_ msg args ...] #'(writeln (format msg args ...))))
 
@@ -116,103 +144,101 @@
             [a a])])
     (unless (empty? next)
       (match next
-        [(list 'pop) 0]
-        [(list 'ldval x)    (flatten (list 1 (get-int-bytes(check-string x))))]
-        [(list 'ldvals x)    (flatten (list 2 (get-int-bytes(check-string x))))]
-        [(list 'ldvalb x)
-                  (flatten (list 3 (get-int-bytes(check-string x))))]
-        [(list 'ldvar x)    (flatten (list 4 (get-int-bytes(check-string x))))]
-        [(list 'stvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
-        [(list 'p_stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
-        [(list 'ldprop) 7]
-        [(list 'p_ldprop) 8]
-        [(list 'stprop) 9]
-        [(list 'p_stprop) 10]
-        [(list 'add) 11]
-        [(list 'sub) 12]
-        [(list 'mul) 13]
-        [(list 'div) 14]
-        [(list 'mod) 15]
-        [(list 'rndi) 16]
-        [(list 'startswith) 17]
-        [(list 'p_startswith) 18]
-        [(list 'endswith) 19]
-        [(list 'p_endswith) 20]
-        [(list 'contains) 21]
-        [(list 'p_contains) 22]
-        [(list 'indexof) 23]
-        [(list 'p_indexof) 24]
-        [(list 'substring) 25]
-        [(list 'p_substring) 26]
-        [(list 'ceq) 27]
-        [(list 'cne) 28]
-        [(list 'cgt) 29]
-        [(list 'clt) 30]
-        [(list 'beq x)    (flatten (list 31 (get-int-bytes(check-string x))))]
-        [(list 'bne x)    (flatten (list 32 (get-int-bytes(check-string x))))]
-        [(list 'bgt x)    (flatten (list 33 (get-int-bytes(check-string x))))]
-        [(list 'blt x)    (flatten (list 34 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 35 (get-int-bytes(check-string x))))]
-        [(list 'createobj) 36]
-        [(list 'cloneobj) 37]
-        [(list 'getobj) 38]
-        [(list 'getobjs) 39]
-        [(list 'delprop) 40]
-        [(list 'p_delprop) 41]
-
-        [(list 'delobj) 42]
-        [(list 'moveobj) 43]
-        [(list 'p_moveobj) 44]
-        [(list 'createlist) 45]
-        [(list 'appendlist) 46]
-        [(list 'p_appendlist) 47]
-        [(list 'removelist) 48]
-        [(list 'p_removelist) 49]
-        [(list 'len) 50]
-        [(list 'p_len) 51]
-        [(list 'index) 52]
-        [(list 'p_index) 53]
-        [(list 'keys) 54]
-        [(list 'values) 55]
-        [(list 'getloc) 56]
-        [(list 'genloc) 57]
-        [(list 'genlocref) 58]
-        [(list 'setlocsibling) 59]
-        [(list 'p_setlocsibling) 60]
-        [(list 'setlocchild) 61]
-        [(list 'p_setlocchild) 62]
-        [(list 'setlocparent) 63]
-        [(list 'p_setlocparent) 64]
-        [(list 'getlocsiblings) 65]
-        [(list 'p_getlocsiblings) 66]
-        [(list 'getlocchildren) 67]
-        [(list 'p_getlocchildren) 68]
-        [(list 'getlocparent) 69]
-        [(list 'p_getlocparent) 70]
-        [(list 'setvis) 71]
-        [(list 'p_setvis) 72]
-        [(list 'adduni) 73]
-        [(list 'deluni) 74]
-        [(list 'roll) 75]
-        [(list 'deal) 76]
-        [(list 'shuffle) 77]
-        [(list 'merge) 78]
-        [(list 'sort) 79]
-        [(list 'genreq) 80]
-        [(list 'addaction) 81]
-        [(list 'p_addaction) 82]
-        [(list 'suspend) 83]
-        [(list 'cut) 84]
-        [(list 'say) 85]
-        [(list 'pushscope) 86]
-        [(list 'popscope) 87]
-        [(list 'lambda x )
-         (flatten (list 88 (get-int-bytes(check-string x))))]
-        [(list 'apply) 89]
-        [(list 'p_apply) 90]
-        [(list 'ret) 91]
-        [(list 'dbg) 92]
-        [(list 'dbgl) 93]
+        [(list 'brk) 0]
+        [(list 'pop) 1]
+        [(list 'ldval x) (flatten (list 2 (get-int-bytes(check-string x))))]
+        [(list 'ldvals x) (flatten (list 3 (get-int-bytes(check-string x))))]
+        [(list 'ldvalb x) (flatten (list 4 (get-int-bytes(check-string x))))]
+        [(list 'ldvar x)  (flatten (list 5 (get-int-bytes(check-string x))))]
+        [(list 'stvar x)  (flatten (list 6 (get-int-bytes(check-string x))))]
+        [(list 'p_stvar x) (flatten (list 7 (get-int-bytes(check-string x))))]
+        [(list 'ldprop) 8]
+        [(list 'p_ldprop) 9]
+        [(list 'stprop) 10]
+        [(list 'p_stprop) 11]
+        [(list 'inc) 12]
+        [(list 'dec) 13]
+        [(list 'add) 14]
+        [(list 'sub) 15]
+        [(list 'mul) 16]
+        [(list 'div) 17]
+        [(list 'mod) 18]
+        [(list 'rndi) 19]
+        [(list 'startswith) 20]
+        [(list 'p_startswith) 21]
+        [(list 'endswith) 22]
+        [(list 'p_endswith) 23]
+        [(list 'contains) 24]
+        [(list 'p_contains) 25]
+        [(list 'indexof) 26]
+        [(list 'p_indexof) 27]
+        [(list 'substring) 28]
+        [(list 'p_substring) 29]
+        [(list 'ceq) 30]
+        [(list 'cne) 31]
+        [(list 'cgt) 32]
+        [(list 'clt) 33]
+        [(list 'beq x)    (flatten (list 34 (get-int-bytes(check-string x))))]
+        [(list 'bne x)    (flatten (list 35 (get-int-bytes(check-string x))))]
+        [(list 'bgt x)    (flatten (list 36 (get-int-bytes(check-string x))))]
+        [(list 'blt x)    (flatten (list 37 (get-int-bytes(check-string x))))]
+        [(list 'branch x) (flatten (list 38 (get-int-bytes(check-string x))))]
+        [(list 'createobj) 39]
+        [(list 'cloneobj) 40]
+        [(list 'getobj) 41]
+        [(list 'getobjs) 42]
+        [(list 'delprop) 43]
+        [(list 'p_delprop) 44]
+        [(list 'delobj) 45]
+        [(list 'moveobj) 46]
+        [(list 'p_moveobj) 47]
+        [(list 'createlist) 48]
+        [(list 'appendlist) 49]
+        [(list 'p_appendlist) 50]
+        [(list 'removelist) 51]
+        [(list 'p_removelist) 52]
+        [(list 'len) 53]
+        [(list 'p_len) 54]
+        [(list 'index) 55]
+        [(list 'p_index) 56]
+        [(list 'keys) 57]
+        [(list 'values) 58]
+        [(list 'getloc) 59]
+        [(list 'genloc) 60]
+        [(list 'genlocref) 61]
+        [(list 'setlocsibling) 62]
+        [(list 'p_setlocsibling) 63]
+        [(list 'setlocchild) 64]
+        [(list 'p_setlocchild) 65]
+        [(list 'setlocparent) 66]
+        [(list 'p_setlocparent) 67]
+        [(list 'getlocsiblings) 68]
+        [(list 'p_getlocsiblings) 69]
+        [(list 'getlocchildren) 70]
+        [(list 'p_getlocchildren) 71]
+        [(list 'getlocparent) 72]
+        [(list 'p_getlocparent) 73]
+        [(list 'setvis) 74]
+        [(list 'p_setvis) 75]
+        [(list 'adduni) 76]
+        [(list 'deluni) 77]
+        [(list 'splitat) 78]
+        [(list 'shuffle) 79]
+        [(list 'sort) 80]
+        [(list 'sortby) 81]
+        [(list 'genreq) 82]
+        [(list 'addaction) 83]
+        [(list 'p_addaction) 84]
+        [(list 'suspend) 85]
+        [(list 'cut) 86]
+        [(list 'say) 87]
+        [(list 'pushscope) 88]
+        [(list 'popscope) 89]
+        [(list 'lambda x) (flatten (list 90 (get-int-bytes(check-string x))))]
+        [(list 'apply) 91]
+        [(list 'ret) 92]
+        [(list 'dbg) 93]
+        [(list 'dbgl) 94]
         ))))
 
 (define (assemble opcodes)
@@ -373,9 +399,8 @@
         [end
          #'`(
              (p_len)
-             (ldval 1)  ; increase  loop index
              (ldvar idx)
-             (add)
+             (inc)
              (p_stvar idx)
              (bne label)
              (continue)
@@ -399,8 +424,7 @@
              (ldval 0)
              (beq continue)
              (p_len)
-             (ldval -1)
-             (add)
+             (dec)
              (stvar idx)
              (label ldvar idx)
              (p_index)
@@ -409,10 +433,8 @@
         [end
          #'`(
              (ldval -1)
-             (ldval 1)  ; decrease loop index
              (ldvar idx)
-
-             (sub)
+             (dec)
              (p_stvar idx)
              (bne label)
              (continue)
@@ -597,6 +619,32 @@
    #:with id (symbol->string (syntax-e #'name))
    #'`(,(create-obj ([key value] ...))
        (stvar id))])
+
+(define-syntax-parser s-sort
+  [(_ l) #'`(,(eval-arg l)
+             (ldvalb 0)
+             (sort))])
+
+(define-syntax-parser sortDesc
+  [(_ l) #'`(,(eval-arg l)
+             (ldvalb 1)
+             (sort))])
+
+(define-syntax-parser sortBy
+  [(_ l k) #'`(,(eval-arg l)
+               (ldvalb 0)
+               ,(eval-arg k)
+             (sortby))])
+
+(define-syntax-parser sortByDesc
+  [(_ l k) #'`(,(eval-arg l)
+               (ldvalb 1)
+               ,(eval-arg k)
+               (sortby))])
+
+(define-syntax-parser shuffle
+  [(_ l) #'`(,(eval-arg l)
+               (shuffle))])
 
 (define-syntax (create-obj stx)
   (syntax-parse stx
@@ -872,9 +920,9 @@
 
 (define-syntax (ignore stx)
   (syntax-parse stx
-    [(_ expr)
-     #'`(,(eval-arg expr)
-         (pop))]))
+    [(_ expr ...)
+     #'`((,(eval-arg expr)
+         (pop)) ...)]))
 
 (define-syntax (rndi stx)
   (syntax-parse stx
@@ -1047,7 +1095,7 @@
 
 (define-syntax-parser prop+=
   [(_ obj key n)
-   #'`(,(eval-arg obj) ;this could be better if we had dup
+   #'`(,(eval-arg obj) ;not very nice
        ,(eval-arg key)     
        ,(eval-arg obj)
        ,(eval-arg key)     
@@ -1059,7 +1107,7 @@
 
 (define-syntax-parser prop-=
   [(_ obj key n)
-   #'`(,(eval-arg obj) ;this could be better if we had dup
+   #'`(,(eval-arg obj) ;not very nice
        ,(eval-arg key)     
        ,(eval-arg n)
        ,(eval-arg obj)
@@ -1214,3 +1262,21 @@
        ,(s-match (binding.dest ... ...) body ... ))])
 
 
+(define-syntax-parser split-at
+  [(_ n bottom inputs)
+   #'`(,(eval-arg inputs)
+       ,(eval-arg n)
+       ,(eval-arg bottom)
+       (splitat))])
+
+(define-syntax-parser pop-list
+  [(_ inputs)
+   #'`(,(eval-arg inputs)
+       (p_len)
+       (dec)
+       (ldvalb 0)
+       (splitat))])
+
+(define-syntax-parser assert
+  [(_ condition msg ... )
+   #'(s-unless condition (dbgl "assert failed : " msg ...))])
