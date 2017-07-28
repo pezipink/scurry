@@ -135,7 +135,7 @@
       (string-suffix? (symbol->string s) ":")))
 
 (define (get-bytes input)
-  (wdb "~a : ~a" (context-max-assembled asm) input)
+;  (wdb "~a : ~a" (context-max-assembled asm) input)
   (let* ([next
           (match input
             [(list-rest (? is-label? (app symbol->string lab) ) xs)
@@ -146,12 +146,12 @@
       (match next
         [(list 'brk) 0]
         [(list 'pop) 1]
-        [(list 'ldval x) (flatten (list 2 (get-int-bytes(check-string x))))]
-        [(list 'ldvals x) (flatten (list 3 (get-int-bytes(check-string x))))]
-        [(list 'ldvalb x) (flatten (list 4 (get-int-bytes(check-string x))))]
-        [(list 'ldvar x)  (flatten (list 5 (get-int-bytes(check-string x))))]
-        [(list 'stvar x)  (flatten (list 6 (get-int-bytes(check-string x))))]
-        [(list 'p_stvar x) (flatten (list 7 (get-int-bytes(check-string x))))]
+        [(list 'ldval x)    (flatten (list 2 (get-int-bytes(check-string x))))]
+        [(list 'ldvals x)    (flatten (list 3 (get-int-bytes(check-string x))))]
+        [(list 'ldvalb x)    (flatten (list 4 (get-int-bytes(check-string x))))]
+        [(list 'ldvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
+        [(list 'stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
+        [(list 'p_stvar x)    (flatten (list 7 (get-int-bytes(check-string x))))]
         [(list 'ldprop) 8]
         [(list 'p_ldprop) 9]
         [(list 'stprop) 10]
@@ -182,7 +182,7 @@
         [(list 'bne x)    (flatten (list 35 (get-int-bytes(check-string x))))]
         [(list 'bgt x)    (flatten (list 36 (get-int-bytes(check-string x))))]
         [(list 'blt x)    (flatten (list 37 (get-int-bytes(check-string x))))]
-        [(list 'branch x) (flatten (list 38 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 38 (get-int-bytes(check-string x))))]
         [(list 'createobj) 39]
         [(list 'cloneobj) 40]
         [(list 'getobj) 41]
@@ -203,42 +203,43 @@
         [(list 'p_index) 56]
         [(list 'keys) 57]
         [(list 'values) 58]
-        [(list 'getloc) 59]
-        [(list 'genloc) 60]
-        [(list 'genlocref) 61]
-        [(list 'setlocsibling) 62]
-        [(list 'p_setlocsibling) 63]
-        [(list 'setlocchild) 64]
-        [(list 'p_setlocchild) 65]
-        [(list 'setlocparent) 66]
-        [(list 'p_setlocparent) 67]
-        [(list 'getlocsiblings) 68]
-        [(list 'p_getlocsiblings) 69]
-        [(list 'getlocchildren) 70]
-        [(list 'p_getlocchildren) 71]
-        [(list 'getlocparent) 72]
-        [(list 'p_getlocparent) 73]
-        [(list 'setvis) 74]
-        [(list 'p_setvis) 75]
-        [(list 'adduni) 76]
-        [(list 'deluni) 77]
-        [(list 'splitat) 78]
-        [(list 'shuffle) 79]
-        [(list 'sort) 80]
-        [(list 'sortby) 81]
-        [(list 'genreq) 82]
-        [(list 'addaction) 83]
-        [(list 'p_addaction) 84]
-        [(list 'suspend) 85]
-        [(list 'cut) 86]
-        [(list 'say) 87]
-        [(list 'pushscope) 88]
-        [(list 'popscope) 89]
-        [(list 'lambda x) (flatten (list 90 (get-int-bytes(check-string x))))]
-        [(list 'apply) 91]
-        [(list 'ret) 92]
-        [(list 'dbg) 93]
-        [(list 'dbgl) 94]
+        [(list 'syncprop) 59]
+        [(list 'getloc) 60]
+        [(list 'genloc) 61]
+        [(list 'genlocref) 62]
+        [(list 'setlocsibling) 63]
+        [(list 'p_setlocsibling) 64]
+        [(list 'setlocchild) 65]
+        [(list 'p_setlocchild) 66]
+        [(list 'setlocparent) 67]
+        [(list 'p_setlocparent) 68]
+        [(list 'getlocsiblings) 69]
+        [(list 'p_getlocsiblings) 70]
+        [(list 'getlocchildren) 71]
+        [(list 'p_getlocchildren) 72]
+        [(list 'getlocparent) 73]
+        [(list 'p_getlocparent) 74]
+        [(list 'setvis) 75]
+        [(list 'p_setvis) 76]
+        [(list 'adduni) 77]
+        [(list 'deluni) 78]
+        [(list 'splitat) 79]
+        [(list 'shuffle) 80]
+        [(list 'sort) 81]
+        [(list 'sortby) 82]
+        [(list 'genreq) 83]
+        [(list 'addaction) 84]
+        [(list 'p_addaction) 85]
+        [(list 'suspend) 86]
+        [(list 'cut) 87]
+        [(list 'say) 88]
+        [(list 'pushscope) 89]
+        [(list 'popscope) 90]
+        [(list 'lambda x)    (flatten (list 91 (get-int-bytes(check-string x))))]
+        [(list 'apply) 92]
+        [(list 'ret) 93]
+        [(list 'dbg) 94]
+        [(list 'dbgl) 95]
         ))))
 
 (define (assemble opcodes)
@@ -352,7 +353,7 @@
          ([load (datum->syntax stx loaders)]
           [label (new-label)])
          #'`((pending-function             
-             label 
+              label
              load
              (pop)
              ,body
@@ -489,6 +490,12 @@
          (getobj)
          ,(eval-arg key)
          (ldprop))]))
+
+(define-syntax (global-obj stx)
+  (syntax-parse stx
+    [(_)
+     #'`((ldval -1)
+         (getobj))]))
 
 (define-syntax (set-global stx)
   (syntax-parse stx
@@ -712,6 +719,12 @@
    #'`(,(eval-arg var)
        ,(eval-arg key)
        (removelist))])
+
+(define-syntax-parser remove-uni
+  [(_ var)
+   #'`(,(eval-arg var)
+       (deluni)
+       )])
 
 (define-syntax (s-return stx)
   (syntax-parse stx
@@ -1121,7 +1134,7 @@
   (syntax-parse stx
     [(_ var)  #'(def var (sub 1 var))]))
 
-(define-syntax-parser ~
+(define-syntax-parser ~  
   [(_ f args ...)
    #'`(,(eval-arg f)
        ((,(eval-arg args) (apply)) ...))])
@@ -1208,7 +1221,8 @@
 
 (define-syntax-parser def-λ
   [(_ (name args ...) body ...)
-   #'(def name (λ (args ...) body ...))])
+   #'(def name (λ (args ...)
+                 body ...))])
 
 (define-syntax-parser import
     [(_ lib) #'lib])
@@ -1280,3 +1294,10 @@
 (define-syntax-parser assert
   [(_ condition msg ... )
    #'(s-unless condition (dbgl "assert failed : " msg ...))])
+
+; useful for announcing in plae changes to lists
+(define-syntax-parser sync-prop
+  [(_ obj prop )
+   #'`(,(eval-arg obj)
+       ,(eval-arg prop)
+       (syncprop))])

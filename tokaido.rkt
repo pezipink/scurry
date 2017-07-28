@@ -10,7 +10,56 @@
 
  (def-λ (enter-farm player)
    (prop+= player "coins" 3))
-   
+
+ (def-λ (enter-hot-spring player)
+   (def springs (get-global "hot-springs"))
+   (when (gt (list-len springs) 0)
+     (~ deal (global-obj) "hot-springs" player "hot-springs" 1)))
+
+ (def-λ (enter-village player)
+   ;the player views and can buy up to three souvenirs
+   (extract ([(clientid) player]
+             [(souvenirs) (global-obj)])
+     
+     (def-λ (can-buy? index avail)
+       (and (lt index (list-len avail))
+            (gt (get-prop player "coins")
+                (get-prop (nth index avail) "cost"))))
+
+     (def-λ (to-description index avail)
+       (extract ([(cost name souvenir-type) (nth index avail)])
+         (add "buy the " name " souvenir of type " souvenir-type " for " cost)))
+
+     (def-λ (buy index avail)
+       (extract ([(cost) (nth index avail)])
+         (prop-= player "coins" cost)
+         (remove-list avail (nth index avail))))
+
+     (def-λ (aux avail)
+       (flow-end)
+       (flow clientid "buy souvenirs"
+         ([(~ can-buy? 0 avail)
+           (~ to-description 0 avail)
+           (~ aux (~ buy 0 avail))]
+          [(~ can-buy? 1 avail)
+           (~ to-description 1 avail)
+           (~ aux (~ buy 1 avail))]
+          [(~ can-buy? 2 avail)
+           (~ to-description 2 avail)
+           (~ aux (~ buy 2 avail))]
+          [#t
+           "do not buy"
+           (return avail)])))
+
+     ; cards not bought go back on the bottom of the pile
+     ;and removed from the clients universe
+     (def n (~ min 3 (list-len souvenirs)))            
+     (def avail (~ split-top n souvenirs))
+     ;move all three to the player area
+     (foreach (s avail) (move-obj s clientid))
+     (set-global "sovenirs" (~ concat souvenirs (~ aux avail)))
+     ))
+ 
  (def-λ (enter-temple player location)
    ;player can donate up to three coins to the temple
    (extract ([(clientid coins) player])
@@ -18,7 +67,7 @@
        (prop-= player "coins" n)
        (prop+= player "points" n)
        (prop+= location (add clientid "-coins") n))
-     (when (gt coins 0)              
+     (when (gt coins 0)
        (flow clientid "donate to the temple"
          ([#t           "1 coin"  (~ coins->temple 1)]
           [(gt coins 1) "2 coins" (~ coins->temple 2)]
@@ -36,18 +85,24 @@
      [(eq _ "temple") _
       (~ enter-temple player loc)]
      [(eq _ "farm") _ (~ enter-farm player)]
+     [(eq _ "hot-spring") _ (~ enter-hot-spring player)]
+     [(eq _ "village") _ (~ enter-village player)]
      )))
 
  (def-λ (setup-player player)
    ;each player has a location keyed by their name
   (def client (get-prop player "clientid"))
   (def player-loc (create-location client))
+  (move-obj player player-loc)
   ;the location has the various places where their cards are held
   ;todo: clean this stuff up wtih some nice macros
   ;todo todo: generate this with an editor!!
   (ignore
    (create-location (add client "-hot-springs") player-loc)
    (create-location (add client "-meals") player-loc))
+
+  
+  
   ;; (def panoramas (create-location "panoramas" player-loc))
   
   ;; (create-location "sea-panorama" player-loc)
@@ -65,10 +120,11 @@
        (set-props player
          (["coins" 8]
           ["points" 0]
+          ["hot-springs" (list)]
           ["enter-temple"
            (λ (player location)
              ;in addition to the normal temple donations,
-             ;hirotada can also "dontate" a coin straight from the
+             ;hirotada can also "donate" a coin straight from the
              ;reserve, and score immediately for it.
              (extract ([(coins clientid) player])
                (flow clientid "donate to the temple (special ability)"
@@ -83,11 +139,51 @@
           )]
        )))]))
 
+ 
  (def players (vals (get-players))) 
  (def temple (create-location "temple"))
-
+ (def spring (create-location "hot-spring1"))
+ (def village (create-location "village1"))
+  
  (set-props temple (["coins" 0]["type" "temple"]))
+ (set-props spring (["type" "hot-spring"]))
+ (set-props village (["type" "village"]))
+ 
+ (def-λ (create-spring value)
+    (create-obj (["type" "hot-spring"]
+                 ["value" value])))
 
+ (def souvs
+   (list
+    (create-obj (["type" "souvenir"]
+                 ["souvenir-type" "A"]
+                 ["name" "juan1"]
+                 ["cost" 1]))
+    (create-obj (["type" "souvenir"]
+                 ["souvenir-type" "B"]
+                 ["name" "juan"]
+                 ["cost" 2]))
+    (create-obj (["type" "souvenir"]
+                 ["souvenir-type" "A"]
+                 ["name" "juan3"]
+                 ["cost" 3]))
+    (create-obj (["type" "souvenir"]
+                 ["souvenir-type" "A"]
+                 ["name" "juan4"]
+                 ["cost" 4]))))
+
+ (set-global "souvenirs" souvs)
+ (def hot-springs (list))
+ (def i 0)
+ (while (lt i 6)
+   (++ i)
+   (append-list hot-springs (~ create-spring 6))
+   (append-list hot-springs (~ create-spring 12)))
+
+
+ (set-global "hot-springs" hot-springs)
+
+ 
  (def i 0)
  (foreach (p players)
    (if (eq i 0)
@@ -96,17 +192,32 @@
      (~ setup-player p)
      (++ i))
     (begin
-     (set-props p (["coins" 10]["points" 0]["role" "neutral"]))
+      (set-props p (["coins" 10]
+                    ["points" 0]
+                    ["hot-springs" (list)]
+                    ["role" "neutral"]))
+      (def client (get-prop p "clientid"))
+      (def player-loc (create-location client))
+      (move-obj p player-loc)
+
      ))
    (set-prop temple (add (get-prop p "clientid") "-coins") 0)
-   (dbgl "player has " (get-prop p "coins"))
-   (foreach (f (get-global "on-enter"))          
-            (~ f p temple))
-   (dbgl "player now has " (get-prop p "coins"))
-   (dbgl "temple now has " (get-prop temple "coins"))
-         
-         )
- 
+   ;; (dbgl "player has " (get-prop p "coins"))
+   ;; (foreach (f (get-global "on-enter"))          
+   ;;          (~ f p temple))
+   ;; (dbgl "player now has " (get-prop p "coins"))
+   ;; (dbgl "temple now has " (get-prop temple "coins"))
+
+   ;; (dbgl "player has " (get-prop p "hot-springs"))
+   ;; (foreach (f (get-global "on-enter"))          
+   ;;          (~ f p spring))
+   ;; (dbgl "player has " (get-prop p "hot-springs"))          
+
+ (foreach (f (get-global "on-enter"))          
+             (~ f p village))
+   
+   )
+
 
  )
 

@@ -54,6 +54,32 @@
      (def-λ (split-bottom n inputs)       
        (split-at n #t inputs))
 
+     (def-λ (concat source dest)
+       (dbgl "in concat with " source " and " dest)
+       (foreach (i source) (append-list dest i))
+       (return dest))
+     
+     (def-λ (deal from-obj from-prop to-obj to-prop n)
+       ;todo: visibilty
+       (dbgl "in deal")
+       (def source (get-prop from-obj from-prop))
+       (def dest (get-prop to-obj from-prop))
+       (def new (~ split-top n source))
+       (~ concat new dest)
+       (sync-prop from-obj from-prop)
+       (sync-prop to-obj to-prop)
+       )
+
+     (def-λ (max x y)
+       (if (gt x y)
+         (return x)
+         (return y)))
+
+     (def-λ (min x y)
+       (if (lt x y)
+         (return x)
+         (return y)))
+     
      (def-λ (lists-same? a b)
        (def al (list-len a))
        (def bl (list-len b))
