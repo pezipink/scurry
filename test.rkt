@@ -7,13 +7,18 @@
 
 
 (scurry
- (import core-lib)
- (def A (create-obj (["A" (list 1 2 3 4 5)])))
- (def B (create-obj (["A" (list 1 2 )])))
+  (import core-lib)
+  (def x 10)
+  (def x 11)
+  (def y (list 1 2 3 4))
+  (foreach (i y)
+    (dbgl i))
 
- (dbgl "A " (get-prop A "A" ) " B " (get-prop B "A"))
- 
- (~ deal A "A" B "A" 2)
+  (def-λ (mod-global-list mapper key)
+    (def list (get-global key))
+    (~ mapper list)
+    (set-global key list))
 
- (dbgl "A " (get-prop A "A" ) " B " (get-prop B "A"))
- )
+  (def z (add x i))
+
+  )

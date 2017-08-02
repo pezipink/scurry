@@ -1,9 +1,10 @@
 #lang racket
 (require syntax/parse/define)
 (require (for-syntax syntax/parse))
-
+(require (for-syntax racket/set))
 (require (for-syntax racket/format))
-(require racket/match)
+(require (for-syntax syntax/srcloc))
+;(require racket/match)
 (require (for-syntax racket/list))
 (require (for-syntax racket/match))
 (require racket/trace)
@@ -307,6 +308,72 @@
   (close-output-port out)
   (wdb "finished"))
 
+
+
+
+(begin-for-syntax
+  (define scoped-bindings-stack (box (list (mutable-set))))
+  (define (push-scoped-stack)
+    (let* ([lst (unbox scoped-bindings-stack)]
+           [new-lst (cons (mutable-set) lst)])
+;      (writeln "pushing new scope")
+      (set-box! scoped-bindings-stack new-lst)))
+    
+  (define (pop-scoped-stack)
+    (let* ([lst (unbox scoped-bindings-stack)]
+           [new-lst (cdr lst)])
+;      (writeln "popping scope")
+      (set-box! scoped-bindings-stack new-lst)))
+
+  (define (peek-scoped-stack)
+    (let ([lst (unbox scoped-bindings-stack)])
+  ;    (writeln (format "lst is ~a" lst))
+      (car lst)))
+            
+  (define (add-scoped-binding stx-name stx)
+    (let ([name (syntax-e stx-name)]
+          [scoped (peek-scoped-stack)])
+      (when (set-member? scoped name)
+        (writeln
+         (format "warning: ~a is already in scope at ~a"
+                 name (source-location->string stx))))
+;      (writeln (format "adding ~a to scoped bindings" name))  
+      (set-add! scoped name)))
+
+  (define (remove-scoped-binding stx-name)
+    (let ([name (syntax-e stx-name)]
+          [scoped (peek-scoped-stack)])
+;      (writeln (format "removed binding ~a from scope " name))
+      (set-remove! scoped name)))
+
+  (define (in-scope? name)
+    (define (aux lst)
+;         (writeln (format "aux ~a ~a" lst name))
+      (cond  
+        [(empty? lst) #f]
+        [(set-member? (car lst) name) #t]
+        [else (aux (cdr lst))]))
+    (aux (unbox scoped-bindings-stack))))
+    
+
+
+(begin-for-syntax
+  (define-syntax-class scoped-binding
+    #:description "identifier in scope"
+    #:opaque
+    (pattern x:id
+             #:with name  (symbol->string (syntax-e #'x))
+             #:when (in-scope? (symbol->string (syntax-e #'x)))
+             )))
+
+(begin-for-syntax
+  (define-syntax-class binding
+    #:description "identifier name"
+    #:opaque
+    (pattern x:id
+             #:with name (symbol->string (syntax-e #'x))
+             )))
+
 (define-syntax (say-client stx)
   (syntax-parse stx
     [(_ arg msg)
@@ -352,24 +419,31 @@
        (with-syntax
          ([load (datum->syntax stx loaders)]
           [label (new-label)])
+         (push-scoped-stack)
+         
          #'`((pending-function             
               label
              load
              (pop)
              ,body
+             ,(pop-scope)
              (ret))
            (lambda label))))
             
        ]
-    [(_ (arg) body)
+    [(_ (arg:binding) body)
+     (push-scoped-stack)
+     (add-scoped-binding #'arg.name stx)
      (with-syntax
        ([label (new-label)])
-       #'`(
+       #'`(           
            ;tell the assembler to create this later
            (pending-function             
              label 
-             (stvar ,@(var-name arg))
+             ;(stvar ,@(var-name arg))
+             (stvar arg.name)
              ,body
+             ,(pop-scope)
              (ret))
            (lambda label)
           )
@@ -378,11 +452,10 @@
      
 (define-syntax (foreach stx)
   (syntax-parse stx
-    [(_ (var list-expr) exprs ...)
+    [(_ (var:binding list-expr) exprs ...)
      (with-syntax*
        ([label (new-label)]
         [continue (new-label)]
-        [id (symbol->string (syntax-e #'var))]
         [idx (new-var)]
         [start
          #'`(
@@ -395,7 +468,7 @@
              (stvar idx)
              (label ldvar idx)
              (p_index)
-             (stvar id)
+             (stvar var.name)
              )]
         [end
          #'`(
@@ -406,9 +479,29 @@
              (bne label)
              (continue)
              (pop)
+             ,(pop-scope)
              )])
+       (push-scoped-stack)
+       (add-scoped-binding #'var.name stx)
        #'(start exprs ... end))]))
 
+(define-syntax (pop-scope stx)
+  (syntax-parse stx
+    [(_ )
+     (pop-scoped-stack)
+  #'`(())]))
+(define-syntax (push-scope stx)
+  (syntax-parse stx
+    [(_ )
+     (push-scoped-stack)
+  #'`(())]))
+  
+(define-syntax (push-binding stx)
+  (syntax-parse stx
+    [(_ id)
+     (add-scoped-binding #'id stx)
+  #'`(())]))
+    
 (define-syntax (foreach-reverse stx)
   (syntax-parse stx
     [(_ (var list-expr) exprs ...)
@@ -566,23 +659,22 @@
            loadd
            (pop))))]
              
-    [(_ name expr)
-     (with-syntax*
-       ([id (symbol->string (syntax-e #'name))])
-     #'`( ;expr should calculate some value on the stack, or load a constant
-         ,(eval-arg expr)
-         (stvar id)))]))
+    [(_ id:binding expr)
+     (add-scoped-binding #'id.name stx)
+     (syntax/loc stx
+     `( ;expr should calculate some value on the stack, or load a constant
+       ,(eval-arg expr)
+       (stvar id.name)))]))
 
 (define-syntax (new-list stx)
   (syntax-parse stx
     [(_ exprs ... ) #''((createlist))]))
 
 (define-syntax-parser eval-arg
-  [(_ expr:id)
-   #:with id (symbol->string (syntax-e #'expr))
+  [(_ id:scoped-binding)
      ; if this is an identifier then it will be a string table lookup
      ; to a variable       
-     #''((ldvar id))]
+     (syntax/loc this-syntax '((ldvar id.name)))]
   [(_ expr:str)     
    #''((ldvals expr))]
   [(_ expr:integer)
@@ -618,14 +710,12 @@
        )]) 
 
 (define-syntax-parser def-obj
-  [(_ name)
-   #:with id (symbol->string (syntax-e #'name))
+  [(_ id:binding)   
    #'`((createobj)
-       (stvar id))]
-  [(_ name ([key value]...))
-   #:with id (symbol->string (syntax-e #'name))
+       (stvar id.name))]
+  [(_ id:binding ([key value]...))
    #'`(,(create-obj ([key value] ...))
-       (stvar id))])
+       (stvar id.name))])
 
 (define-syntax-parser s-sort
   [(_ l) #'`(,(eval-arg l)
@@ -673,11 +763,11 @@
          (moveobj))]))
           
 (define-syntax-parser def-flow
-  [(_ name title)
-   #:with id (symbol->string (syntax-e #'name)) 
+  [(_ name:binding title)
+   (add-scoped-binding #'name.name)
    #'`(,(eval-arg title)
        (genreq)
-       (stvar id))])
+       (stvar name.name))])
 
 (define-syntax-parser add-flow-action
   [(_ req id text)
@@ -701,6 +791,8 @@
    (with-syntax
      ([flow-name (string->symbol (new-var))]
       [resp-name (string->symbol (new-var))])
+     (add-scoped-binding #'flow-name)
+     (add-scoped-binding #'resp-name)
    #'`(,(def-flow flow-name title-expr)
        ((,(s-when expr.eq-expr
           (add-flow-action flow-name expr.n expr.case-title-expr))...))  
@@ -1104,7 +1196,7 @@
 
 (define-syntax (++ stx)
   (syntax-parse stx
-    [(_ var)  #'(def var (add 1 var))]))
+    [(_ var)  (syntax/loc stx (def var (add 1 var)))]))
 
 (define-syntax-parser prop+=
   [(_ obj key n)
@@ -1220,7 +1312,7 @@
    #'(λ (_) (body ...))])
 
 (define-syntax-parser def-λ
-  [(_ (name args ...) body ...)
+  [(_ (name args ...) body ...)   
    #'(def name (λ (args ...)
                  body ...))])
 
@@ -1246,7 +1338,8 @@
   (syntax-parse stx
     [(_ ([binding:bindings input-expr] ... ) body ...)
      #'`((
-          ((,(eval-arg input-expr)
+          (( (,(push-binding binding.dest-str) ...)
+            ,(eval-arg input-expr)
             (((ldvals binding.key-str)
               (p_ldprop)
               (stvar binding.dest-str)) ...)
@@ -1268,7 +1361,8 @@
 (define-syntax-parser extract-match
   [(_ ([binding:bindings input-expr] ... ) body ...)
    #'`((
-        ((,(eval-arg input-expr)
+        (((,(push-binding binding.dest-str) ...)
+          ,(eval-arg input-expr)
           (((ldvals binding.key-str)
             (p_ldprop)
             (stvar binding.dest-str)) ...)

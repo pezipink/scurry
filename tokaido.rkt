@@ -47,6 +47,7 @@
           [(~ can-buy? 2 avail)
            (~ to-description 2 avail)
            (~ aux (~ buy 2 avail))]
+          
           [#t
            "do not buy"
            (return avail)])))
@@ -130,8 +131,8 @@
                (flow clientid "donate to the temple (special ability)"
                  ([#t "1 coin from the reserve"
                    (begin
-                     (prop+= player "points" n)
-                     (prop+= location (add clientid "-coins") n))]
+                     (prop+= player "points" 1)
+                     (prop+= location (add clientid "-coins") 1))]
                   [#t "skip" '()]))
                (flow-end))
              (~ enter-temple player location)
