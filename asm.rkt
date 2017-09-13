@@ -1,6 +1,7 @@
 #lang racket
 (require syntax/parse/define)
-(require (for-syntax syntax/parse))
+(require (for-syntax syntax/parse
+                     racket/string))
 (require (for-syntax racket/set))
 (require (for-syntax racket/format))
 (require (for-syntax syntax/srcloc))
@@ -13,6 +14,9 @@
 
 (require threading)
 (require (for-syntax threading))
+
+;(provide (except-out (all-from-out racket) #%app sort when if)
+;(rename-out [app #%app])
 
 (provide
  (except-out
@@ -28,8 +32,12 @@
 ;  s-shuffle
   ))
 
+(provide #%module-begin
+         #%top-interaction
+         #%top)
 (provide
  (rename-out
+  [app #%app]
   [s-sort sort]
   [s-when when]
   [s-if if]
@@ -136,7 +144,7 @@
       (string-suffix? (symbol->string s) ":")))
 
 (define (get-bytes input)
-;  (wdb "~a : ~a" (context-max-assembled asm) input)
+ (wdb "~a : ~a" (context-max-assembled asm) input)
   (let* ([next
           (match input
             [(list-rest (? is-label? (app symbol->string lab) ) xs)
@@ -316,18 +324,15 @@
   (define (push-scoped-stack)
     (let* ([lst (unbox scoped-bindings-stack)]
            [new-lst (cons (mutable-set) lst)])
-;      (writeln "pushing new scope")
       (set-box! scoped-bindings-stack new-lst)))
     
   (define (pop-scoped-stack)
     (let* ([lst (unbox scoped-bindings-stack)]
            [new-lst (cdr lst)])
-;      (writeln "popping scope")
       (set-box! scoped-bindings-stack new-lst)))
 
   (define (peek-scoped-stack)
     (let ([lst (unbox scoped-bindings-stack)])
-  ;    (writeln (format "lst is ~a" lst))
       (car lst)))
             
   (define (add-scoped-binding stx-name stx)
@@ -337,25 +342,21 @@
         (writeln
          (format "warning: ~a is already in scope at ~a"
                  name (source-location->string stx))))
-;      (writeln (format "adding ~a to scoped bindings" name))  
       (set-add! scoped name)))
 
   (define (remove-scoped-binding stx-name)
     (let ([name (syntax-e stx-name)]
           [scoped (peek-scoped-stack)])
-;      (writeln (format "removed binding ~a from scope " name))
       (set-remove! scoped name)))
 
   (define (in-scope? name)
     (define (aux lst)
-;         (writeln (format "aux ~a ~a" lst name))
       (cond  
         [(empty? lst) #f]
         [(set-member? (car lst) name) #t]
         [else (aux (cdr lst))]))
     (aux (unbox scoped-bindings-stack))))
     
-
 
 (begin-for-syntax
   (define-syntax-class scoped-binding
@@ -373,6 +374,18 @@
     (pattern x:id
              #:with name (symbol->string (syntax-e #'x))
              )))
+
+(begin-for-syntax
+  (define-syntax-class prop-accessor
+    #:description "property accessor"
+    (pattern x:id
+             #:when (string-contains? (symbol->string (syntax-e #'x)) ".")
+             #:with ident1 (car (string-split (symbol->string (syntax-e #'x)) "."))
+             #:with ident (string->symbol (car (string-split (symbol->string (syntax-e #'x)) ".")))
+             #:when (in-scope?  (syntax-e #'ident1))
+             #:with prop (cadr (string-split (symbol->string (syntax-e #'x)) "."))
+             )))
+
 
 (define-syntax (say-client stx)
   (syntax-parse stx
@@ -426,7 +439,7 @@
              load
              (pop)
              ,body
-             ,(pop-scope)
+             ,(pop-scoped-stack)
              (ret))
            (lambda label))))
             
@@ -443,7 +456,7 @@
              ;(stvar ,@(var-name arg))
              (stvar arg.name)
              ,body
-             ,(pop-scope)
+             ,(pop-scoped-stack)
              (ret))
            (lambda label)
           )
@@ -479,22 +492,22 @@
              (bne label)
              (continue)
              (pop)
-             ,(pop-scope)
+             ,(pop-scoped-stack)
              )])
        (push-scoped-stack)
        (add-scoped-binding #'var.name stx)
        #'(start exprs ... end))]))
 
-(define-syntax (pop-scope stx)
-  (syntax-parse stx
-    [(_ )
-     (pop-scoped-stack)
-  #'`(())]))
-(define-syntax (push-scope stx)
-  (syntax-parse stx
-    [(_ )
-     (push-scoped-stack)
-  #'`(())]))
+
+(define-syntax-parser pop-scoped-stack
+  [(_ )
+   (pop-scoped-stack)
+   #''()])
+
+(define-syntax-parser push-scoped-stack
+  [(_)
+   (push-scoped-stack)
+   #'`()])
   
 (define-syntax (push-binding stx)
   (syntax-parse stx
@@ -670,11 +683,16 @@
   (syntax-parse stx
     [(_ exprs ... ) #''((createlist))]))
 
+
 (define-syntax-parser eval-arg
-  [(_ id:scoped-binding)
+;  (wdb "eval arg ~a" this-syntax)
+  [(_ id:prop-accessor)
+   #'(get-prop id.ident id.prop)]
+  
+  [(_ id:scoped-binding)   
      ; if this is an identifier then it will be a string table lookup
      ; to a variable       
-     (syntax/loc this-syntax '((ldvar id.name)))]
+   (syntax/loc this-syntax '((ldvar id.name)))]
   [(_ expr:str)     
    #''((ldvals expr))]
   [(_ expr:integer)
@@ -710,10 +728,12 @@
        )]) 
 
 (define-syntax-parser def-obj
-  [(_ id:binding)   
+  [(_ id:binding)
+   (add-scoped-binding #'id.name this-syntax)
    #'`((createobj)
        (stvar id.name))]
   [(_ id:binding ([key value]...))
+   (add-scoped-binding #'id.name this-syntax)
    #'`(,(create-obj ([key value] ...))
        (stvar id.name))])
 
@@ -764,7 +784,7 @@
           
 (define-syntax-parser def-flow
   [(_ name:binding title)
-   (add-scoped-binding #'name.name)
+   (add-scoped-binding #'name.name this-syntax)
    #'`(,(eval-arg title)
        (genreq)
        (stvar name.name))])
@@ -791,8 +811,8 @@
    (with-syntax
      ([flow-name (string->symbol (new-var))]
       [resp-name (string->symbol (new-var))])
-     (add-scoped-binding #'flow-name)
-     (add-scoped-binding #'resp-name)
+     (add-scoped-binding #'flow-name this-syntax)
+     (add-scoped-binding #'resp-name this-syntax)
    #'`(,(def-flow flow-name title-expr)
        ((,(s-when expr.eq-expr
           (add-flow-action flow-name expr.n expr.case-title-expr))...))  
@@ -1070,22 +1090,21 @@
            ;jump here and push true on the stack
            (when-true ldvalb 1)
            (end)))]))
-                 
-(define-syntax (s-and stx)
-  (syntax-parse stx
-    [(_ expr ...)
-     (with-syntax*
-       ([when-false (new-label)]
-        [end (new-label)]
-        [(cases ...)
-         #'`((,(eval-arg expr)
-             (ldvalb 0)
-             (beq when-false))...)])
-       #'`(,(cases ...)
-           (ldvalb 1)
-           (branch end)
-           (when-false ldvalb 0)
-           (end)))]))
+
+(define-syntax-parser s-and
+  [(_ expr ...)
+   (with-syntax*
+     ([when-false (new-label)]
+      [end (new-label)]
+      [(cases ...)
+       #'`((,(eval-arg expr)
+            (ldvalb 0)
+            (beq when-false))...)])
+     #'`(,(cases ...)
+         (ldvalb 1)
+         (branch end)
+         (when-false ldvalb 0)
+         (end)))])
 
 (define-syntax-parser s-not 
     [(_ expr )
@@ -1226,7 +1245,7 @@
   (syntax-parse stx
     [(_ var)  #'(def var (sub 1 var))]))
 
-(define-syntax-parser ~  
+(define-syntax-parser ~
   [(_ f args ...)
    #'`(,(eval-arg f)
        ((,(eval-arg args) (apply)) ...))])
@@ -1246,16 +1265,9 @@
              [(list? node)
               (match node
                 [(list-rest '#%app (or 'list 'list*) (list 'quote 'pending-function) tail)
-                 ;                 (writeln "helloo")
-                 ;                  (writeln tail)
                  (let-values ([(a b) (folder tail null null)])
                    ;todo: handle the nested lambdas (or does it already??)
-                   ;; (writeln "lambda process")
-                   ;; (writeln a)
-                   ;; (writeln "B")
-                   ;; (writeln b)
-                   (values acc (cons b (cons a funcs))))]
-                
+                   (values acc (cons b (cons a funcs))))]               
                 [(list
                   '#%app
                   (or 'list* 'list)
@@ -1265,14 +1277,7 @@
                 
                 [_
                  (let-values ([(a b) (folder node null null)])
-                   (values (cons a acc) (cons b funcs)))])
-              
-              
-              ;; (if (and (not (empty? node))
-              ;;          (eq? (car node) '))
-              ;;     (values acc (cons node funcs))
-
-
+                   (values (cons a acc) (cons b funcs)))])      
               ]
              ;drop all this stuff we arent interested in
              [(eq? node '#%app) (values acc funcs)]
@@ -1283,19 +1288,7 @@
            ))
        (values (reverse a) (reverse b)))
 
-     ;; (writeln "original2")
-     ;; (writeln (syntax->datum e))
-     ;; (writeln "")
-     ;       (writeln "res")
-     (define-values (a b) (folder (syntax->datum e) null null))     
-     ;; (writeln a)
-     ;; (writeln "")
-     ;; (writeln "res2")
-     ;; (writeln b)
-     ;; (writeln "")
-     ;(writeln (datum->syntax stx  a))
-     ;  (writeln (syntax->datum e)))
-     
+     (define-values (a b) (folder (syntax->datum e) null null))          
      (with-syntax ([yay (datum->syntax this-syntax (append a b))])
        #'(write-file "c:\\temp\\test.scur" 'yay))
      )     
@@ -1395,3 +1388,21 @@
    #'`(,(eval-arg obj)
        ,(eval-arg prop)
        (syncprop))])
+
+
+(define-syntax (app stx)
+
+  (syntax-parse stx
+    #:datum-literals (= += -=)
+    [(_ f:prop-accessor += val)
+       #'(prop+= f.ident f.prop val)]
+    [(_ f:prop-accessor -= val)
+       #'(prop-= f.ident f.prop val)]
+    [(_ f:prop-accessor = val)
+     #'(set-prop f.ident f.prop val)]
+    ; process everything else as scurry function app
+    [(app f a ...)
+     #'(~ f  a ...)]))
+
+
+

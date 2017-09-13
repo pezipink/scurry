@@ -9,12 +9,12 @@
  (set-global "on-enter" (list)) ;(go, loc)
 
  (def-λ (enter-farm player)
-   (prop+= player "coins" 3))
+   (player.coins += 3))
 
  (def-λ (enter-hot-spring player)
    (def springs (get-global "hot-springs"))
    (when (gt (list-len springs) 0)
-     (~ deal (global-obj) "hot-springs" player "hot-springs" 1)))
+     (deal (global-obj) "hot-springs" player "hot-springs" 1)))
 
  (def-λ (enter-village player)
    ;the player views and can buy up to three souvenirs
@@ -23,8 +23,7 @@
      
      (def-λ (can-buy? index avail)
        (and (lt index (list-len avail))
-            (gt (get-prop player "coins")
-                (get-prop (nth index avail) "cost"))))
+            (gt player.coins (get-prop (nth index avail) "cost"))))
 
      (def-λ (to-description index avail)
        (extract ([(cost name souvenir-type) (nth index avail)])
@@ -32,63 +31,62 @@
 
      (def-λ (buy index avail)
        (extract ([(cost) (nth index avail)])
-         (prop-= player "coins" cost)
-         (remove-list avail (nth index avail))))
+         (player.coins += cost)
+         (remove-list avail cost)))
 
      (def-λ (aux avail)
        (flow-end)
        (flow clientid "buy souvenirs"
-         ([(~ can-buy? 0 avail)
-           (~ to-description 0 avail)
-           (~ aux (~ buy 0 avail))]
-          [(~ can-buy? 1 avail)
-           (~ to-description 1 avail)
-           (~ aux (~ buy 1 avail))]
-          [(~ can-buy? 2 avail)
-           (~ to-description 2 avail)
-           (~ aux (~ buy 2 avail))]
-          
+         ([(can-buy? 0 avail)
+           (to-description 0 avail)
+           (aux (buy 0 avail))]
+          [(can-buy? 1 avail)
+           (to-description 1 avail)
+           (aux (buy 1 avail))]
+          [(can-buy? 2 avail)
+           (to-description 2 avail)
+           (aux (buy 2 avail))]          
           [#t
            "do not buy"
            (return avail)])))
 
      ; cards not bought go back on the bottom of the pile
      ;and removed from the clients universe
-     (def n (~ min 3 (list-len souvenirs)))            
-     (def avail (~ split-top n souvenirs))
+     (def n (min 3 (list-len souvenirs)))            
+     (def avail (split-top n souvenirs))
      ;move all three to the player area
      (foreach (s avail) (move-obj s clientid))
-     (set-global "sovenirs" (~ concat souvenirs (~ aux avail)))
-     ))
- 
+     (set-global "sovenirs" (concat souvenirs (~ aux avail)))))
+
  (def-λ (enter-temple player location)
    ;player can donate up to three coins to the temple
    (extract ([(clientid coins) player])
      (def-λ (coins->temple n)
-       (prop-= player "coins" n)
-       (prop+= player "points" n)
+       (player.coins += n)
+       (player.points += n)
        (prop+= location (add clientid "-coins") n))
      (when (gt coins 0)
        (flow clientid "donate to the temple"
-         ([#t           "1 coin"  (~ coins->temple 1)]
-          [(gt coins 1) "2 coins" (~ coins->temple 2)]
-          [(gt coins 2) "3 coins" (~ coins->temple 3)]
+         ([#t           "1 coin"  (coins->temple 1)]
+          [(gt coins 1) "2 coins" (coins->temple 2)]
+          [(gt coins 2) "3 coins" (coins->temple 3)]
           [#t           "do not donate" '()]))
        (flow-end))))
 
- (~ append-global-list "on-enter"
+ (append-global-list "on-enter"
   (λ (player loc)
     (extract-match
-     ([(ltype : type) loc]
-      [(ptype : role) player])
+     ([(ltype : type) loc] [(ptype : role) player])
      [(eq _ "temple") (eq _ "Hirotada")
-      (~ (get-prop player "enter-temple") player loc)]
+      (player.enter-temple player loc)]
      [(eq _ "temple") _
-      (~ enter-temple player loc)]
-     [(eq _ "farm") _ (~ enter-farm player)]
-     [(eq _ "hot-spring") _ (~ enter-hot-spring player)]
-     [(eq _ "village") _ (~ enter-village player)]
-     )))
+      (enter-temple player loc)]
+     [(eq _ "farm") _
+      (enter-farm player)]
+     [(eq _ "hot-spring") _
+      (enter-hot-spring player)]
+     [(eq _ "village") _
+      (enter-village player)])))
 
  (def-λ (setup-player player)
    ;each player has a location keyed by their name
@@ -114,7 +112,7 @@
   ;; (set-props souvenirs
   ;;            (["type1" '(createlist)]
   ;;             ["type2" '(createlist)]))
-  
+
   (extract-match ([(role) player])
     [(eq _ "Hirotada")
      (begin
@@ -131,15 +129,13 @@
                (flow clientid "donate to the temple (special ability)"
                  ([#t "1 coin from the reserve"
                    (begin
-                     (prop+= player "points" 1)
+                     (player.points += 1)
                      (prop+= location (add clientid "-coins") 1))]
                   [#t "skip" '()]))
                (flow-end))
-             (~ enter-temple player location)
+             (enter-temple player location)
           ;call normal func
-          )]
-       )))]))
-
+          )])))]))
  
  (def players (vals (get-players))) 
  (def temple (create-location "temple"))
@@ -178,8 +174,8 @@
  (def i 0)
  (while (lt i 6)
    (++ i)
-   (append-list hot-springs (~ create-spring 6))
-   (append-list hot-springs (~ create-spring 12)))
+   (append-list hot-springs (create-spring 6))
+   (append-list hot-springs (create-spring 12)))
 
 
  (set-global "hot-springs" hot-springs)
@@ -190,7 +186,7 @@
    (if (eq i 0)
     (begin
      (set-prop p "role" "Hirotada")
-     (~ setup-player p)
+     (setup-player p)
      (++ i))
     (begin
       (set-props p (["coins" 10]
@@ -215,7 +211,7 @@
    ;; (dbgl "player has " (get-prop p "hot-springs"))          
 
  (foreach (f (get-global "on-enter"))          
-             (~ f p village))
+             (f p village))
    
    )
 

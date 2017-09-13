@@ -5,36 +5,36 @@
 (provide (all-defined-out))
 
 (define-syntax (core-lib stx)
-  #'(
+  #'(begin
      (def-λ (mod-global-list mapper key)
        (def list (get-global key))
-       (~ mapper list)
+       (mapper list)
        (set-global key list))
 
      (def-λ (append-global-list key item)
-       (~ mod-global-list (λ (append-list _ item)) key))
+       (mod-global-list (λ (append-list _ item)) key))
 
      (def-λ (remove-global-list key item)
-       (~ mod-global-list (λ (remove-list _ item)) key))
+       (mod-global-list (λ (remove-list _ item)) key))
      
      (def-λ (fold folder inputs acc)
        (foreach (i inputs)
-         (def acc (~ folder acc i)))
+         (def acc (folder acc i)))
        (return acc))
 
      (def-λ (sum inputs)
-       (~ fold (λ (a b) (add a b)) inputs 0))
+       (fold (λ (a b) (add a b)) inputs 0))
      
      (def-λ (map mapper inputs)
        (def out (list))
        (foreach (i inputs)
-         (append-list out (~ mapper i)))
+         (append-list out (mapper i)))
        (return out))
 
      (def-λ (filter pred inputs)
        (def out (list))
        (foreach (i inputs)
-         (when (~ pred i)
+         (when (pred i)
            (append-list out i)))
        (return out))
      
@@ -42,7 +42,7 @@
        (def x (list))
        (def y (list))
        (foreach (i inputs)
-         (if (~ pred i)         
+         (if (pred i)         
            (append-list x i)
            (append-list y i)))
        (tuple x y))
@@ -64,8 +64,8 @@
        (dbgl "in deal")
        (def source (get-prop from-obj from-prop))
        (def dest (get-prop to-obj from-prop))
-       (def new (~ split-top n source))
-       (~ concat new dest)
+       (def new (split-top n source))
+       (concat new dest)
        (sync-prop from-obj from-prop)
        (sync-prop to-obj to-prop)
        )
