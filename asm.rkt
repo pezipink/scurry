@@ -23,6 +23,7 @@
   (all-defined-out)
   s-sort
   s-when
+  s-unless
   s-if
   s-list
   s-return
@@ -40,6 +41,7 @@
   [app #%app]
   [s-sort sort]
   [s-when when]
+  [s-unless unless]
   [s-if if]
   [s-list list]
   [s-return return]
@@ -204,51 +206,53 @@
         [(list 'createlist) 48]
         [(list 'appendlist) 49]
         [(list 'p_appendlist) 50]
-        [(list 'removelist) 51]
-        [(list 'p_removelist) 52]
-        [(list 'len) 53]
-        [(list 'p_len) 54]
-        [(list 'index) 55]
-        [(list 'p_index) 56]
-        [(list 'keys) 57]
-        [(list 'values) 58]
-        [(list 'syncprop) 59]
-        [(list 'getloc) 60]
-        [(list 'genloc) 61]
-        [(list 'genlocref) 62]
-        [(list 'setlocsibling) 63]
-        [(list 'p_setlocsibling) 64]
-        [(list 'setlocchild) 65]
-        [(list 'p_setlocchild) 66]
-        [(list 'setlocparent) 67]
-        [(list 'p_setlocparent) 68]
-        [(list 'getlocsiblings) 69]
-        [(list 'p_getlocsiblings) 70]
-        [(list 'getlocchildren) 71]
-        [(list 'p_getlocchildren) 72]
-        [(list 'getlocparent) 73]
-        [(list 'p_getlocparent) 74]
-        [(list 'setvis) 75]
-        [(list 'p_setvis) 76]
-        [(list 'adduni) 77]
-        [(list 'deluni) 78]
-        [(list 'splitat) 79]
-        [(list 'shuffle) 80]
-        [(list 'sort) 81]
-        [(list 'sortby) 82]
-        [(list 'genreq) 83]
-        [(list 'addaction) 84]
-        [(list 'p_addaction) 85]
-        [(list 'suspend) 86]
-        [(list 'cut) 87]
-        [(list 'say) 88]
-        [(list 'pushscope) 89]
-        [(list 'popscope) 90]
-        [(list 'lambda x)    (flatten (list 91 (get-int-bytes(check-string x))))]
-        [(list 'apply) 92]
-        [(list 'ret) 93]
-        [(list 'dbg) 94]
-        [(list 'dbgl) 95]
+        [(list 'prependlist) 51]
+        [(list 'p_prependlist) 52]
+        [(list 'removelist) 53]
+        [(list 'p_removelist) 54]
+        [(list 'len) 55]
+        [(list 'p_len) 56]
+        [(list 'index) 57]
+        [(list 'p_index) 58]
+        [(list 'keys) 59]
+        [(list 'values) 60]
+        [(list 'syncprop) 61]
+        [(list 'getloc) 62]
+        [(list 'genloc) 63]
+        [(list 'genlocref) 64]
+        [(list 'setlocsibling) 65]
+        [(list 'p_setlocsibling) 66]
+        [(list 'setlocchild) 67]
+        [(list 'p_setlocchild) 68]
+        [(list 'setlocparent) 69]
+        [(list 'p_setlocparent) 70]
+        [(list 'getlocsiblings) 71]
+        [(list 'p_getlocsiblings) 72]
+        [(list 'getlocchildren) 73]
+        [(list 'p_getlocchildren) 74]
+        [(list 'getlocparent) 75]
+        [(list 'p_getlocparent) 76]
+        [(list 'setvis) 77]
+        [(list 'p_setvis) 78]
+        [(list 'adduni) 79]
+        [(list 'deluni) 80]
+        [(list 'splitat) 81]
+        [(list 'shuffle) 82]
+        [(list 'sort) 83]
+        [(list 'sortby) 84]
+        [(list 'genreq) 85]
+        [(list 'addaction) 86]
+        [(list 'p_addaction) 87]
+        [(list 'suspend) 88]
+        [(list 'cut) 89]
+        [(list 'say) 90]
+        [(list 'pushscope) 91]
+        [(list 'popscope) 92]
+        [(list 'lambda x)    (flatten (list 93 (get-int-bytes(check-string x))))]
+        [(list 'apply) 94]
+        [(list 'ret) 95]
+        [(list 'dbg) 96]
+        [(list 'dbgl) 97]
         ))))
 
 (define (assemble opcodes)
@@ -351,7 +355,8 @@
 
   (define (in-scope? name)
     (define (aux lst)
-      (cond  
+      (cond
+        [(equal? name "global") #t]
         [(empty? lst) #f]
         [(set-member? (car lst) name) #t]
         [else (aux (cdr lst))]))
@@ -684,6 +689,7 @@
     [(_ exprs ... ) #''((createlist))]))
 
 
+
 (define-syntax-parser eval-arg
 ;  (wdb "eval arg ~a" this-syntax)
   [(_ id:prop-accessor)
@@ -708,6 +714,12 @@
    #'`(((,(eval-arg var)
          ,(eval-arg exprs)
          (appendlist)) ...))])
+
+(define-syntax-parser prepend-list
+  [(_ var exprs ... )
+   #'`(((,(eval-arg var)
+         ,(eval-arg exprs)
+         (prependlist)) ...))])
 
 (define-syntax-parser keys 
   [(_ expr)

@@ -6,6 +6,8 @@
 
 (define-syntax (core-lib stx)
   #'(begin
+     (def global (global-obj))
+      
      (def-λ (mod-global-list mapper key)
        (def list (get-global key))
        (mapper list)
@@ -24,6 +26,9 @@
 
      (def-λ (sum inputs)
        (fold (λ (a b) (add a b)) inputs 0))
+
+     (def-λ (each l f)
+       (foreach (x l) (f x)))
      
      (def-λ (map mapper inputs)
        (def out (list))
@@ -54,18 +59,18 @@
      (def-λ (split-bottom n inputs)       
        (split-at n #t inputs))
 
-     (def-λ (concat source dest)
-       (dbgl "in concat with " source " and " dest)
-       (foreach (i source) (append-list dest i))
-       (return dest))
+     (def-λ (append-many source dest)
+       (foreach (i source) (append-list dest i)))
+
+     (def-λ (prepend-many source dest)
+       (foreach (i source) (prepend-list dest i)))
      
      (def-λ (deal from-obj from-prop to-obj to-prop n)
        ;todo: visibilty
-       (dbgl "in deal")
        (def source (get-prop from-obj from-prop))
        (def dest (get-prop to-obj from-prop))
        (def new (split-top n source))
-       (concat new dest)
+       (append-many new dest)
        (sync-prop from-obj from-prop)
        (sync-prop to-obj to-prop)
        )
