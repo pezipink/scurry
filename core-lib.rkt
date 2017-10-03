@@ -19,7 +19,7 @@
      (def-λ (remove-global-list key item)
        (mod-global-list (λ (remove-list _ item)) key))
      
-     (def-λ (fold folder inputs acc)
+     (def-λ (fold inputs acc folder)
        (foreach (i inputs)
          (def acc (folder acc i)))
        (return acc))
@@ -29,21 +29,24 @@
 
      (def-λ (each l f)
        (foreach (x l) (f x)))
+
+     (def-λ (each inputs f)
+       (foreach (i inputs) (f i)))
      
-     (def-λ (map mapper inputs)
+     (def-λ (map inputs mapper)
        (def out (list))
        (foreach (i inputs)
          (append-list out (mapper i)))
        (return out))
 
-     (def-λ (filter pred inputs)
+     (def-λ (filter inputs pred)
        (def out (list))
        (foreach (i inputs)
          (when (pred i)
            (append-list out i)))
        (return out))
      
-     (def-λ (partition pred inputs)
+     (def-λ (partition inputs pred)
        (def x (list))
        (def y (list))
        (foreach (i inputs)
@@ -96,5 +99,30 @@
                          (eq (nth i a) (nth i b)))
                (++ i))
              (return (eq i al)))))
+
+     (def-λ (dbg-obj obj)
+       (foreach (k (keys obj))
+         (dbgl k ":" (get-prop obj k))))
+     
+     (def-λ (first pred input)
+       (def res #f)
+       (def i 0)
+       (def len (list-len input))
+       (while (and (lt i len) (eq res #f))
+         (when (pred (nth i input))
+           (def res (nth i input)))
+         (++ i))
+       (return res))
+
+           
+     (def-λ (flow-from-triple clientid title triples)
+       (def-flow req title)
+       (def-obj result-map)
+       (foreach (t triples)
+                (set-prop result-map t.item0 t.item2)
+                (add-flow-action req t.item0 t.item1))
+       (def res (flow req clientid))
+       ((get-prop result-map res) res))
+
      
      ))

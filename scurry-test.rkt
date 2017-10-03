@@ -35,7 +35,8 @@
  (dbgl "hello global " global.hello)
  
  (def-obj function-table
-   (["square" (λ (return (add _ _)))]
+   (["f" (λ (return _))]
+    ["square" (λ (return (add _ _)))]
     ["cube" (λ (return (add _ _ _)))]
     ["twice" (λ (f x) (return (f (f x))))]
     ))
@@ -46,11 +47,17 @@
        (function-table.twice function-table.square 10))
 
 
+
  (def-obj override-functions
    (["square2" (λ (begin
                    (dbgl "inside debug square with " _)
                    (return (add _ _))))]))
 
+
+ ;how to handle things that modify or override some function
+ ;for example, it usually takes 
+
+ 
  'brk
  (def-λ (virtual-dispatch object default-object function-name arg)
    (if (contains  object function-name)

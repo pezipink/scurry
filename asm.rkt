@@ -30,6 +30,7 @@
   s-begin
   s-while
   s-and
+  s-cond
 ;  s-shuffle
   ))
 
@@ -48,6 +49,7 @@
   [s-begin begin]
   [s-while while]
   [s-and and]
+  [s-cond cond]
           ))         
 
 
@@ -188,72 +190,75 @@
         [(list 'ceq) 30]
         [(list 'cne) 31]
         [(list 'cgt) 32]
-        [(list 'clt) 33]
-        [(list 'beq x)    (flatten (list 34 (get-int-bytes(check-string x))))]
-        [(list 'bne x)    (flatten (list 35 (get-int-bytes(check-string x))))]
-        [(list 'bgt x)    (flatten (list 36 (get-int-bytes(check-string x))))]
-        [(list 'blt x)    (flatten (list 37 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 38 (get-int-bytes(check-string x))))]
-        [(list 'createobj) 39]
-        [(list 'cloneobj) 40]
-        [(list 'getobj) 41]
-        [(list 'getobjs) 42]
-        [(list 'delprop) 43]
-        [(list 'p_delprop) 44]
-        [(list 'delobj) 45]
-        [(list 'moveobj) 46]
-        [(list 'p_moveobj) 47]
-        [(list 'createlist) 48]
-        [(list 'appendlist) 49]
-        [(list 'p_appendlist) 50]
-        [(list 'prependlist) 51]
-        [(list 'p_prependlist) 52]
-        [(list 'removelist) 53]
-        [(list 'p_removelist) 54]
-        [(list 'len) 55]
-        [(list 'p_len) 56]
-        [(list 'index) 57]
-        [(list 'p_index) 58]
-        [(list 'keys) 59]
-        [(list 'values) 60]
-        [(list 'syncprop) 61]
-        [(list 'getloc) 62]
-        [(list 'genloc) 63]
-        [(list 'genlocref) 64]
-        [(list 'setlocsibling) 65]
-        [(list 'p_setlocsibling) 66]
-        [(list 'setlocchild) 67]
-        [(list 'p_setlocchild) 68]
-        [(list 'setlocparent) 69]
-        [(list 'p_setlocparent) 70]
-        [(list 'getlocsiblings) 71]
-        [(list 'p_getlocsiblings) 72]
-        [(list 'getlocchildren) 73]
-        [(list 'p_getlocchildren) 74]
-        [(list 'getlocparent) 75]
-        [(list 'p_getlocparent) 76]
-        [(list 'setvis) 77]
-        [(list 'p_setvis) 78]
-        [(list 'adduni) 79]
-        [(list 'deluni) 80]
-        [(list 'splitat) 81]
-        [(list 'shuffle) 82]
-        [(list 'sort) 83]
-        [(list 'sortby) 84]
-        [(list 'genreq) 85]
-        [(list 'addaction) 86]
-        [(list 'p_addaction) 87]
-        [(list 'suspend) 88]
-        [(list 'cut) 89]
-        [(list 'say) 90]
-        [(list 'pushscope) 91]
-        [(list 'popscope) 92]
-        [(list 'lambda x)    (flatten (list 93 (get-int-bytes(check-string x))))]
-        [(list 'apply) 94]
-        [(list 'ret) 95]
-        [(list 'dbg) 96]
-        [(list 'dbgl) 97]
-        ))))
+        [(list 'cgte) 33]
+        [(list 'clt) 34]
+        [(list 'clte) 35]
+        [(list 'beq x)    (flatten (list 36 (get-int-bytes(check-string x))))]
+        [(list 'bne x)    (flatten (list 37 (get-int-bytes(check-string x))))]
+        [(list 'bgt x)    (flatten (list 38 (get-int-bytes(check-string x))))]
+        [(list 'blt x)    (flatten (list 39 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 40 (get-int-bytes(check-string x))))]
+        [(list 'createobj) 41]
+        [(list 'cloneobj) 42]
+        [(list 'getobj) 43]
+        [(list 'getobjs) 44]
+        [(list 'delprop) 45]
+        [(list 'p_delprop) 46]
+        [(list 'delobj) 47]
+        [(list 'moveobj) 48]
+        [(list 'p_moveobj) 49]
+        [(list 'createlist) 50]
+        [(list 'appendlist) 51]
+        [(list 'p_appendlist) 52]
+        [(list 'prependlist) 53]
+        [(list 'p_prependlist) 54]
+        [(list 'removelist) 55]
+        [(list 'p_removelist) 56]
+        [(list 'len) 57]
+        [(list 'p_len) 58]
+        [(list 'index) 59]
+        [(list 'p_index) 60]
+        [(list 'keys) 61]
+        [(list 'values) 62]
+        [(list 'syncprop) 63]
+        [(list 'getloc) 64]
+        [(list 'genloc) 65]
+        [(list 'genlocref) 66]
+        [(list 'setlocsibling) 67]
+        [(list 'p_setlocsibling) 68]
+        [(list 'setlocchild) 69]
+        [(list 'p_setlocchild) 70]
+        [(list 'setlocparent) 71]
+        [(list 'p_setlocparent) 72]
+        [(list 'getlocsiblings) 73]
+        [(list 'p_getlocsiblings) 74]
+        [(list 'getlocchildren) 75]
+        [(list 'p_getlocchildren) 76]
+        [(list 'getlocparent) 77]
+        [(list 'p_getlocparent) 78]
+        [(list 'setvis) 79]
+        [(list 'p_setvis) 80]
+        [(list 'adduni) 81]
+        [(list 'deluni) 82]
+        [(list 'splitat) 83]
+        [(list 'shuffle) 84]
+        [(list 'sort) 85]
+        [(list 'sortby) 86]
+        [(list 'genreq) 87]
+        [(list 'addaction) 88]
+        [(list 'p_addaction) 89]
+        [(list 'suspend) 90]
+        [(list 'cut) 91]
+        [(list 'say) 92]
+        [(list 'pushscope) 93]
+        [(list 'popscope) 94]
+        [(list 'lambda x)    (flatten (list 95 (get-int-bytes(check-string x))))]
+        [(list 'apply) 96]
+        [(list 'ret) 97]
+        [(list 'dbg) 98]
+        [(list 'dbgl) 99]
+
+                ))))
 
 (define (assemble opcodes)
   (for ([opcode opcodes])
@@ -424,7 +429,7 @@
     [(_ ((arg ...)) body)
      ;tuple destructure
      (let*
-         ([args (flatten (syntax->datum #'(arg ...)))]          
+         ([args (flatten (syntax->datum #'(arg ...)))]   
           [loaders         
            (for/list ([i (in-naturals)]
                       [s args])
@@ -630,9 +635,6 @@
      (with-syntax ([name  (symbol->string (syntax-e #'name))])
        #'name)]))
 
-
-
-
 (define-syntax (tuple stx)
   ;not sure how to do this nicely for n-tuples yet so ill just do
   ; it manually for a few for now
@@ -645,7 +647,7 @@
          (ldvals "item1")
          ,(eval-arg b)
          (p_stprop))]
-    [(_ a b)
+    [(_ a b c)
      #'`((createobj)         
          (ldvals "item0")
          ,(eval-arg a)
@@ -654,7 +656,7 @@
          ,(eval-arg b)
          (p_stprop)
          (ldvals "item2")
-         ,(eval-arg a)
+         ,(eval-arg c)
          (p_stprop))]))
          
 (define-syntax (def stx)
@@ -996,6 +998,13 @@
          ,(eval-arg left)
          (cgt))]))
 
+(define-syntax (gte stx)
+  (syntax-parse stx
+    [(_ left right)
+     #'`(,(eval-arg right)
+         ,(eval-arg left)
+         (cgte))]))
+
 (define-syntax (lt stx)
   (syntax-parse stx
     [(_ left right)
@@ -1003,6 +1012,14 @@
          ,(eval-arg right)
          ,(eval-arg left)
          (clt))]))
+
+(define-syntax (lte stx)
+  (syntax-parse stx
+    [(_ left right)
+     #'`(
+         ,(eval-arg right)
+         ,(eval-arg left)
+         (clte))]))
 
 (define-syntax (add stx)
   (syntax-parse stx
@@ -1046,7 +1063,6 @@
          ,(eval-arg start)
          ,(eval-arg len)
          (substring))]))
-
 
 (define-syntax (contains stx)
   (syntax-parse stx
@@ -1312,9 +1328,13 @@
   [(_ (arg args ...+ ) body ...+)     
    #'(s-lambda (arg) (s-return (λ (args ...) body ...)))]
   [(_ (arg) body ...+)
-   #'(s-lambda (arg)(s-begin body ...))]
-  [(_ (body ...))
-   #'(λ (_) (body ...))])
+   #'(s-lambda (arg) (s-begin body ...))]
+  [(_ body)
+   #'(λ (_) body)]
+  ;; [(_ (body ...))
+  ;;  #'(λ (_) (body ...))]
+  )
+  
 
 (define-syntax-parser def-λ
   [(_ (name args ...) body ...)   
