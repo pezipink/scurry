@@ -17,7 +17,7 @@
  (global.equipment = (list))
 
  ; initial object setup
- (foreach (p players)
+ (for (p players)
    (dbgl "setting up player " p.clientid)
    (def-obj shelter
      (["airlock" (create-airlock)]
@@ -41,7 +41,7 @@
       
       ))
 
-   (dbg-obj shelter)
+   ;(dbg-obj shelter)
    
    (def-obj action-data
      (["used-actions" 0]
@@ -64,11 +64,85 @@
    ;todo: pick a building to build for free
    ; and move starting survivors into the airlock
    )
-   
+    
+ ;(~> players (each dbg-obj))
+
+
+ ; core loop functions
  
+ (def-λ (process-dawn)
+   ;replenish board resources
+   (dbgl "process-dawn"))
 
- (~> players (each dbg-obj))
+ (def-λ (process-day)
+   ; new events, hero movement, scavenging and pressure
+   (dbgl "process-day")
 
+   (dbgl "processing events...")
+
+   (for (p players)
+     (dbgl "processing player " p.clientid)
+     ;todo: this processing will be as the player determines it
+     ;and not just a loop
+     (p.phase = phase-day-2)
+     (for (h p.heroes)      
+      (dbgl "\tprocessing hero " h.strength " at location " h.location)))
+
+   )
+ 
+ (def-λ (process-night)
+   ;event resolution, feeding, radioactivity, building, fixing
+   ; todo: this can be done concurrently for each player   
+   (dbgl "process-night")
+   (for (p players)
+     (p.phase = phase-night-1)
+     (while (p.phase <> phase-day-2)
+       (dbgl "\tprocessing " p.phase " for player " p.clientid)
+       (case p.phase
+         [phase-night-1
+          (dbgl "\t\tovercome events")
+          (p.phase = phase-night-2)]
+         [phase-night-2
+          (dbgl "\t\tfeed survivors")
+          (p.phase = phase-night-3)]
+         [phase-night-3
+          (dbgl "\t\tmanage radioactivity")
+          (p.phase = phase-night-4)]
+         [phase-night-4
+          (dbgl "\t\trecruit survivors")
+          (p.phase = phase-night-5)]
+         [phase-night-5
+          (dbgl "\t\tbuid and activate rooms")
+          (p.phase = phase-night-6)]
+         [phase-night-6
+          (dbgl "\t\tfix equipment")
+          (p.phase = phase-night-7)]
+         [phase-night-7
+          (dbgl "\t\tshelter upkeep")
+          (p.phase = phase-day-2)]))))
+
+ ;main game loop
+ (while (global.turn < 7)
+   (dbgl "current turn is " global.turn)
+   (case global.phase
+     [phase-dawn
+      (dbgl "processing dawn phase")
+      (process-dawn)
+      (global.phase = phase-day)]
+     [phase-day
+      (dbgl "processing day phase")
+      (process-day)
+      (global.phase = phase-night)]
+     [phase-night
+      (dbgl "processing night phase")
+      (process-night)
+      (global.phase = phase-dawn)
+      (global.turn += 1)]))
+      
+  
+ 
+ (dbgl "game over")
+ 'brk
  'brk
  (dbgl "end")
 )

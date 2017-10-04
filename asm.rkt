@@ -21,8 +21,10 @@
 (provide
  (except-out
   (all-defined-out)
+  s-for
   s-sort
   s-when
+  s-case
   s-unless
   s-if
   s-list
@@ -40,7 +42,9 @@
 (provide
  (rename-out
   [app #%app]
+  [s-for for]
   [s-sort sort]
+  [s-case case]
   [s-when when]
   [s-unless unless]
   [s-if if]
@@ -473,7 +477,7 @@
 
        )]))
      
-(define-syntax (foreach stx)
+(define-syntax (s-for stx)
   (syntax-parse stx
     [(_ (var:binding list-expr) exprs ...)
      (with-syntax*
@@ -525,7 +529,7 @@
      (add-scoped-binding #'id stx)
   #'`(())]))
     
-(define-syntax (foreach-reverse stx)
+(define-syntax (for-reverse stx)
   (syntax-parse stx
     [(_ (var list-expr) exprs ...)
      (with-syntax*
@@ -1427,17 +1431,35 @@
        ,(eval-arg prop)
        (syncprop))])
 
+(define-syntax-parser s-case
+  [(_ test [val expr ...] ... )
+   #'`(,(s-cond
+         [(eq test val)
+          (s-begin expr ...)] ...))
+       
+   ])
 
 (define-syntax (app stx)
-
   (syntax-parse stx
-    #:datum-literals (= += -=)
+    #:datum-literals (= += -= < <= > >= <>)
     [(_ f:prop-accessor += val)
-       #'(prop+= f.ident f.prop val)]
+     #'(prop+= f.ident f.prop val)]
+    [(_ f:prop-accessor ++)
+     #'(++ f)]
     [(_ f:prop-accessor -= val)
        #'(prop-= f.ident f.prop val)]
     [(_ f:prop-accessor = val)
      #'(set-prop f.ident f.prop val)]
+    [(_ f:prop-accessor < val)
+     #'(lt f val)]
+    [(_ f:prop-accessor > val)
+     #'(gt f val)]
+    [(_ f:prop-accessor <= val)
+     #'(lte f val)]
+    [(_ f:prop-accessor >= val)
+     #'(gte f val)]
+    [(_ f:prop-accessor <> val)
+     #'(ne f val)]
     ; process everything else as scurry function app
     [(app f a ...+)
      #'(~ f  a ...)]

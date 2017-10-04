@@ -20,7 +20,7 @@
        (mod-global-list (λ (remove-list _ item)) key))
      
      (def-λ (fold inputs acc folder)
-       (foreach (i inputs)
+       (for (i inputs)
          (def acc (folder acc i)))
        (return acc))
 
@@ -28,20 +28,20 @@
        (fold (λ (a b) (add a b)) inputs 0))
 
      (def-λ (each l f)
-       (foreach (x l) (f x)))
+       (for (x l) (f x)))
 
      (def-λ (each inputs f)
-       (foreach (i inputs) (f i)))
+       (for (i inputs) (f i)))
      
      (def-λ (map inputs mapper)
        (def out (list))
-       (foreach (i inputs)
+       (for (i inputs)
          (append-list out (mapper i)))
        (return out))
 
      (def-λ (filter inputs pred)
        (def out (list))
-       (foreach (i inputs)
+       (for (i inputs)
          (when (pred i)
            (append-list out i)))
        (return out))
@@ -49,7 +49,7 @@
      (def-λ (partition inputs pred)
        (def x (list))
        (def y (list))
-       (foreach (i inputs)
+       (for (i inputs)
          (if (pred i)         
            (append-list x i)
            (append-list y i)))
@@ -63,10 +63,10 @@
        (split-at n #t inputs))
 
      (def-λ (append-many source dest)
-       (foreach (i source) (append-list dest i)))
+       (for (i source) (append-list dest i)))
 
      (def-λ (prepend-many source dest)
-       (foreach (i source) (prepend-list dest i)))
+       (for (i source) (prepend-list dest i)))
      
      (def-λ (deal from-obj from-prop to-obj to-prop n)
        ;todo: visibilty
@@ -101,7 +101,7 @@
              (return (eq i al)))))
 
      (def-λ (dbg-obj obj)
-       (foreach (k (keys obj))
+       (for (k (keys obj))
          (dbgl k ":" (get-prop obj k))))
      
      (def-λ (first pred input)
@@ -118,7 +118,7 @@
      (def-λ (flow-from-triple clientid title triples)
        (def-flow req title)
        (def-obj result-map)
-       (foreach (t triples)
+       (for (t triples)
                 (set-prop result-map t.item0 t.item2)
                 (add-flow-action req t.item0 t.item1))
        (def res (flow req clientid))
