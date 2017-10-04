@@ -1337,9 +1337,15 @@
   
 
 (define-syntax-parser def-λ
-  [(_ (name args ...) body ...)   
+  [(_ (name args ...+) body ...)   
    #'(def name (λ (args ...)
-                 body ...))])
+                 body ...))]
+  ; sugar a no-args lambda with _
+  ; auto application calls this with #f
+  ; which is ignored, so we dont have to
+  ; have a speical unit() value
+  [(_ (name) body ...)   
+   #'(def name (λ (_)  body ...))])
 
 (define-syntax-parser import
     [(_ lib) #'lib])
@@ -1433,8 +1439,12 @@
     [(_ f:prop-accessor = val)
      #'(set-prop f.ident f.prop val)]
     ; process everything else as scurry function app
-    [(app f a ...)
-     #'(~ f  a ...)]))
+    [(app f a ...+)
+     #'(~ f  a ...)]
+    [(app f)
+     ;since we don't support unit we just "sugar" a
+     ;call with no args with #fm sane as the def- λ
+     #'(~ f #f)]))
 
 
 
