@@ -7,7 +7,65 @@
 
 (scurry
  (import core-lib)
+
+ (def-λ (pay-cost player-state cost-type amount)   
+   (def paid 0)
+   (def shelter player-state.shelter)
+   
+   (def-λ (create-req type)
+     (tuple type
+            (add "pay 1 " type "(" (get-prop shelter type) " remaining)")
+            (λ (prop-= shelter type 1))))
+
+   (while (lt paid amount)
+     (~>
+      (case cost-type
+        ["materials" (list "wood" "metal" "microchips")]
+        ["supplies"  (list "water" "meat" "canned-goods")]
+        [else (list cost-type)])
+      (filter (λ (gt (get-prop shelter _) 0)))
+      (map create-req)
+      (flow-from-triple
+        player-state.clientid
+        (add "pay the cost (" paid "/" amount ")")))
+
+     (++ paid)))
+
+ (def-λ (shelter-has-enough shelter cost-type amount)
+   (dbgl "in shelter-has-enough " amount)
+   (case cost-type
+     ["materials"
+      (return (gte (add shelter.wood shelter.metal shelter.microchips) amount))]))
+ 
+ 
+ (def-λ (build-room player-state room cost-modifier)
+   (dbgl "in build-room")
+   (pay-cost player-state "materials" (cost-modifier room))
+   (room.state = "built")   
+   (flow-end)
+   )
+ 
+ (def-λ (get-building-actions player-state cost-modifier)
+   (dbgl "in get building actions")
+   (def shelter player-state.shelter)
+   (~>
+    shelter.stuff
+    (filter (λ (and (eq _.type "room") (eq _.state "unbuilt"))))
+    (filter (λ (shelter-has-enough
+                shelter "materials" (cost-modifier _)))))
+       
+   )
+
+  (def-λ (get-stuff-activations player-state)
+   (dbgl "in get stuff activations")
+   (def shelter player-state.shelter)
+   (~>
+    shelter.stuff
+    (filter (λ (return (_.avail? _ player-state))))))
+
+
  (import outlive-data)
+
  (def players (vals (get-players)))
  
  (global.turn = 0)
@@ -21,9 +79,8 @@
    (dbgl "setting up player " p.clientid)
    (def-obj shelter
      (["airlock" (create-airlock)]
-      ["buildings" (create-starting-rooms)] ; todo: distribute advanced rooms
-      ["equipment" (list)]
-      
+      ["stuff" (create-starting-rooms)] ; todo: distribute advanced rooms
+
       ["ammo" 0]
 
       ;supplies
@@ -32,9 +89,9 @@
       ["canned-goods" 0]
       
       ;materials
-      ["microchips" 0]
-      ["metal" 0]
-      ["wood" 0]
+      ["microchips" 2]
+      ["metal" 2]
+      ["wood" 1]
 
       ["radioactivity" 0]
       ["leader" ""] ;todo
@@ -65,8 +122,6 @@
    ; and move starting survivors into the airlock
    )
     
- ;(~> players (each dbg-obj))
-
 
  ; core loop functions
  
@@ -94,10 +149,19 @@
    ;event resolution, feeding, radioactivity, building, fixing
    ; todo: this can be done concurrently for each player   
    (dbgl "process-night")
-   (for (p players)
+
+   (for (p players)                   
      (p.phase = phase-night-1)
+     ; collect any available actions from rooms and equipment
+     ; that apply to this phase
      (while (p.phase <> phase-day-2)
        (dbgl "\tprocessing " p.phase " for player " p.clientid)
+       (def stuff
+         (~>
+          (get-stuff-activations p)
+          (map (λ (thing)
+                 (tuple thing.name (add "Activate : " thing.desc)
+                        (λ (thing.action thing p)))))))
        (case p.phase
          [phase-night-1
           (dbgl "\t\tovercome events")
@@ -113,12 +177,33 @@
           (p.phase = phase-night-5)]
          [phase-night-5
           (dbgl "\t\tbuid and activate rooms")
-          (p.phase = phase-night-6)]
+          (~>
+           ; room building options at normal cost
+           (get-building-actions p (λ (return _.cost)))
+           (map (λ (room)
+             (tuple
+              room.name
+              (add "Build : " room.desc " for cost " room.cost )
+              (λ (begin
+                   (dbgl "player chose " _)
+                   (build-room p room (λ (return _.cost))))))))
+
+           ;; ; any available building actions
+           (append-many stuff)
+           
+           ; special end-phase choice
+           (append-single
+            (tuple "end-phase" "end this phase"
+                   (λ (p.phase = phase-night-6))))
+
+           (flow-from-triple p.clientid "build a room?"))
+          ]
          [phase-night-6
           (dbgl "\t\tfix equipment")
           (p.phase = phase-night-7)]
          [phase-night-7
           (dbgl "\t\tshelter upkeep")
+          
           (p.phase = phase-day-2)]))))
 
  ;main game loop
@@ -137,7 +222,8 @@
       (dbgl "processing night phase")
       (process-night)
       (global.phase = phase-dawn)
-      (global.turn += 1)]))
+      (global.turn += 1)])
+   (flow-end))
       
   
  
@@ -146,28 +232,3 @@
  'brk
  (dbgl "end")
 )
-
-
-;; (def-λ (build-room state room-name cost)
-;;    (dbgl "building room " room-name " for " cost)
-;;    (def room (first (λ (eq _.name room-name)) state.unbuilt))
-;;    (room.state = "built")
-;;    (append-list state.single-use room)
-;;    (state.materials -= (cost room))
-;;    (flow-end)) 
- 
-;;  (def-λ (build-room-reqs state modifier)
-;;    (def-λ (room->desc room)
-;;     (add "Build room : " room.name ".  " room.desc " for cost " (modifier room)))
-;;   (def-λ (can-build? room)
-;;     (return
-;;      (and
-;;       (eq room.state "unbuilt")
-;;       (lte state.materials (modifier room)))))
-;;   (~>
-;;    state.unbuilt  
-;;    (filter can-build?)
-;;    (map (λ (tuple
-;;             _.name
-;;             (room->desc _)
-;;             (λ (name) (build-room state _.name modifier)))))))

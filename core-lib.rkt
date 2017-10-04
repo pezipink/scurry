@@ -62,21 +62,27 @@
      (def-λ (split-bottom n inputs)       
        (split-at n #t inputs))
 
-     (def-λ (append-many source dest)
-       (for (i source) (append-list dest i)))
-
-     (def-λ (prepend-many source dest)
-       (for (i source) (prepend-list dest i)))
+     (def-λ (append-single lst new-value)
+       (append-list lst new-value)
+       (return lst))
      
-     (def-λ (deal from-obj from-prop to-obj to-prop n)
-       ;todo: visibilty
-       (def source (get-prop from-obj from-prop))
-       (def dest (get-prop to-obj from-prop))
-       (def new (split-top n source))
-       (append-many new dest)
-       (sync-prop from-obj from-prop)
-       (sync-prop to-obj to-prop)
+     (def-λ (append-many dest source)
+       (for (i source) (append-list dest i))
+       (return dest)
        )
+
+     ;; (def-λ (prepend-many  dest source)
+     ;;   (for (i source) (prepend-list dest i)))
+     
+     ;; (def-λ (deal from-obj from-prop to-obj to-prop n)
+     ;;   ;todo: visibilty
+     ;;   (def source (get-prop from-obj from-prop))
+     ;;   (def dest (get-prop to-obj from-prop))
+     ;;   (def new (split-top n source))
+     ;;   (append-many new dest)
+     ;;   (sync-prop from-obj from-prop)
+     ;;   (sync-prop to-obj to-prop)
+     ;;   )
 
      (def-λ (max x y)
        (if (gt x y)
@@ -115,7 +121,7 @@
        (return res))
 
            
-     (def-λ (flow-from-triple clientid title triples)
+     (def-λ (flow-from-triple triples clientid title)
        (def-flow req title)
        (def-obj result-map)
        (for (t triples)

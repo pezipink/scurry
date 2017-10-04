@@ -20,12 +20,12 @@
         (λ (this state)
           (and
            (eq this.state "built")
-           (gte this.workers this.capacity)
+;           (gte this.workers this.capacity)
            (eq this.used? #f)
            (avail this state)))]
        ["action"
         (λ (this state)
-          (this.used?)
+          (this.used? = #t)
           (action this state))]
        ["used?" #f]
        others ...
@@ -47,7 +47,7 @@
            (avail this state)))]
        ["action"
         (λ (this state)
-          (this.used?)
+          (this.used? = #t)
           (action this state))]
        ["used?" #f]
        others ...
@@ -133,7 +133,7 @@
       (def-λ (create-starting-rooms)
         (def equip
           (create-room "draw-equip-repair"
-                       "draw one equipment tile and repair for 1 material less"
+                       "draw one equipment tile and repair for 1 materials less"
                        3 2 3
                        (λ (this state)
                          (eq state.phase phase-night-6))
@@ -142,14 +142,26 @@
                        ))
 
         (def construct
-          (create-room "room-construction"
-                       "build one room with 2 less material"
-                       3 2 3
-                       (λ (this state)
-                         (eq state.phase phase-night-5))
-                       (λ (this state)
-                         (dbgl "room-construction was selected")
-                         )))
+          (create-room
+           "room-construction"
+           "build one room with 2 less material"
+           3 2 3
+           (λ (this state)
+             (eq state.phase phase-night-5))
+           (λ (this state)
+             (begin
+               (dbgl "room-construction was selected")
+               (~>
+                state
+                (get-building-actions (λ (return (sub 2 _.cost))))
+                (map (λ (room)
+                       (tuple
+                        room.name
+                        (add "Build : " room.desc " for cost " (sub 2 _.cost) )
+                        (λ (begin
+                             (dbgl "player chose " _)
+                             (build-room state room (λ (return (sub 2 _.cost)))))))))
+                (flow-from-triple state.clientid "Build a room (special"))))))
 
         ;todo: overcome event
         (return (list equip construct))

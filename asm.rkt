@@ -12,6 +12,8 @@
 (require racket/string)
 (require (for-syntax racket/syntax))
 
+;(string-join (cdr (string-split "hello.world.three" ".")) ".")
+
 (require threading)
 (require (for-syntax threading))
 
@@ -152,7 +154,7 @@
       (string-suffix? (symbol->string s) ":")))
 
 (define (get-bytes input)
- (wdb "~a : ~a" (context-max-assembled asm) input)
+ ;(wdb "~a : ~a" (context-max-assembled asm) input)
   (let* ([next
           (match input
             [(list-rest (? is-label? (app symbol->string lab) ) xs)
@@ -388,6 +390,7 @@
     (pattern x:id
              #:with name (symbol->string (syntax-e #'x))
              )))
+
 
 (begin-for-syntax
   (define-syntax-class prop-accessor
@@ -1431,8 +1434,15 @@
        ,(eval-arg prop)
        (syncprop))])
 
-(define-syntax-parser s-case
-  [(_ test [val expr ...] ... )
+(define-syntax-parser s-case #:datum-literals (else)
+  [(_ test [val expr ...] ...+
+      [else else-expr ...])
+   #'`(,(s-cond
+         [(eq test val)
+          (s-begin expr ...)] ...
+          [else else-expr ... ]))]
+   
+    [(_ test [val expr ...] ... )
    #'`(,(s-cond
          [(eq test val)
           (s-begin expr ...)] ...))
