@@ -67,6 +67,7 @@
             (flow-from-triple
              player-state.clientid
              (add "pay the cost (" paid "/" amount ")")))
+           (flow-end)
            (++ paid)))))
         
  (def-λ (pay-cost player-state cost-type amount)   
@@ -86,6 +87,7 @@
       (flow-from-triple
         player-state.clientid
         (add "pay the cost (" paid "/" amount ")")))
+     (flow-end)
      (++ paid)))
 
  (def-λ (shelter-has-enough-specific shelter cost-types amount)
@@ -99,16 +101,16 @@
      (fold (keys counts) 0
            (λ (acc c)
               (add acc (min (get-prop counts c) (get-prop shelter c))))))
-   (return (gte total amount)))
+   (gte total amount))
       
  (def-λ (shelter-has-enough shelter cost-type amount)
    (dbgl "in shelter-has-enough " amount)
    (case cost-type
      ["materials"
-      (return (gte (add shelter.wood shelter.metal shelter.microchips) amount))]
+      (gte (add shelter.wood shelter.metal shelter.microchips) amount)]
      ["supplies"
-      (return (gte (add shelter.meat shelter.canned-goods shelter.water) amount))]
-     [else (return (gte (get-prop shelter cost-type) amount))]))
+      (gte (add shelter.meat shelter.canned-goods shelter.water) amount)]
+     [else (gte (get-prop shelter cost-type) amount)]))
 
  (def-λ (fix-equipment player-state equip cost-modifier)
    (dbgl "in fix-equipment")
@@ -154,8 +156,8 @@
  (global.turn <- 0)
  (global.resources <-
    (create-obj
-    ([wood 30]
-     [metal 30]
+    (["wood" 30]
+     ["metal" 30]
      ["microchips" 30]
      ["water" 30]
      ["meat" 30]
@@ -166,13 +168,17 @@
  (global.events <- (list))
  (global.equipment <- (list))
 
+ ;each piece of equipment exists twice
+ (for (e equipment-prototypes)
+   (append-list global.equipment (clone-obj e))
+   (append-list global.equipment (clone-obj e)))
+ 
  ; initial object setup
  (for (p players)
    (dbgl "setting up player " p.clientid)
    (def-obj shelter
      (["airlock" (create-airlock)]
-      ["stuff" (append-many (list axe)
-                            (create-starting-rooms))] ; todo: distribute advanced rooms
+      ["stuff" (create-starting-rooms)] ; todo: distribute advanced rooms
 
       ["ammo" 0]
 
@@ -182,9 +188,9 @@
       ["canned-goods" 0]
       
       ;materials
-      ["microchips" 5]
-      ["metal" 1]
-      ["wood" 2]
+      ["microchips" 0]
+      ["metal" 0]
+      ["wood" 0]
 
       ["radioactivity" 0]
       ["leader" ""] ;todo
@@ -197,20 +203,59 @@
      (["used-actions" 0]
       ["last-result" ""]))
 
-   ;todo: assign leader and resources
-   (def starting-loc "home") ;todo: leader dependent
-
    (set-props p
      (["shelter" shelter]
       ["phase" phase-day-2]
       ["heroes"
         (list
-         (create-hero starting-loc 3)
-         (create-hero starting-loc 3)
-         (create-hero starting-loc 4)
-         (create-hero starting-loc 5))]
+         (create-hero "" 3)
+         (create-hero "" 3)
+         (create-hero "" 4)
+         (create-hero "" 5))]
       ["action-data" action-data]))
 
+   (def-λ (leader->desc leader)
+     (def desc leader.name)
+     (return desc))
+
+   (def-λ (choose-leader leader)
+     (shelter.leader <- leader)
+     (for (r leader.resources)
+       (case r
+         ["blackwood-tile" (dbgl "blackwood tile")]
+         ["silent-peak-tile" (dbgl "silent peak tile")]
+         [else (prop+= shelter r 1)]))
+
+     (def equip (first global.equipment (λ (_.name = leader.equipment))))
+     (if (equip = #f)
+         (begin (dbgl "could not find equipment " leader.equipment)
+                'brk)
+         (begin
+           (remove-list global.equipment equip)
+           (append-list shelter.stuff equip)))
+     
+     (def locations (clone-list leader.starting-locations))
+     (for (h p.heroes)
+       (flow-end)
+       (def title (add "Select a starting location for your strength " h.strength " hero."))
+       (~>
+        locations
+        (map (λ (loc)
+               (tuple loc loc
+                 (λ (begin
+                      (h.location <- _)
+                      (remove-list locations _))))))
+        (flow-from-triple p.clientid title))))
+     
+   (~>
+    leaders
+    (map (λ (leader)
+           (tuple leader.name
+                  (leader->desc leader)
+                  (λ (choose-leader leader)))))
+    (flow-from-triple p.clientid "Choose a leader"))
+   
+   (def starting-loc "home") ;todo: leader dependent
    ;todo: pick a building to build for free
    ; and move starting survivors into the airlock
    )
@@ -247,10 +292,10 @@
      (p.phase <- phase-night-1)
      ; collect any available actions from rooms and equipment
      ; that apply to this phase
-     (while (p.phase <> phase-day-2)
+     (while (p.phase != phase-day-2)
        (dbgl "\tprocessing " p.phase " for player " p.clientid)
        (def stuff
-         (~>
+         (~>  
           (get-stuff-activations p)
           (map (λ (thing)
                  (tuple thing.name (add "Activate : " thing.desc)
@@ -269,7 +314,7 @@
           (dbgl "\t\trecruit survivors")
           (p.phase <- phase-night-5)]
          [phase-night-5
-          (dbgl "\t\tbuid and activate rooms")
+          (dbgl "\t\tbuild and activate rooms")
           (~>
            ; room building options at normal cost
            (get-building-actions p (λ (return _.cost)))
@@ -279,7 +324,7 @@
               (add "Build : " room.desc " for cost " room.cost )
               (λ (begin
                    (dbgl "player chose " _)
-                   (build-room p room (λ (return _.cost))))))))
+                   (build-room p room (λ (return room.cost))))))))
 
            (append-many stuff)
            
@@ -300,7 +345,7 @@
               (add "Fix : " equip.desc " for cost " )
               (λ (begin
                    (dbgl "player chose " _)
-                   (fix-equipment p equip (λ (return (list-len _.cost)))))))))
+                   (fix-equipment p equip (λ (return (list-len equip.cost)))))))))
 
            (append-many stuff)
            

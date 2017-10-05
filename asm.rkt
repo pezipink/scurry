@@ -1438,7 +1438,7 @@
   [(_ condition msg ... )
    #'(s-unless condition (dbgl "assert failed : " msg ...))])
 
-(define-syntax-parser clone
+(define-syntax-parser clone-obj
   [(_ obj)
    #'`(,(eval-arg obj)
        (cloneobj))])
@@ -1467,7 +1467,7 @@
 
 (define-syntax (app stx)
   (syntax-parse stx
-    #:datum-literals (<- = += -= < <= > >= <> ++)
+    #:datum-literals (<- != = += -= < <= > >= ++)
     [(_ f:prop-accessor += val)
      #'(prop+= f.ident f.prop val)]
     [(_ f:prop-accessor ++)
@@ -1476,6 +1476,8 @@
        #'(prop-= f.ident f.prop val)]
     [(_ f:prop-accessor = val)
      #'(eq (get-prop f.ident f.prop) val)]
+    [(_ f = val)
+     #'(eq f val)]
     [(_ f:prop-accessor <- val)
      #'(set-prop f.ident f.prop val)]
     [(_ f:prop-accessor < val)
@@ -1486,8 +1488,8 @@
      #'(lte f val)]
     [(_ f:prop-accessor >= val)
      #'(gte f val)]
-    [(_ f:prop-accessor <> val)
-     #'(ne f val)]
+    [(_ f:prop-accessor != val)
+     #'(ne f val) ]
     ; process everything else as scurry function app
     [(app f a ...+)
      #'(~ f  a ...)]

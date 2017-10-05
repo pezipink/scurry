@@ -132,13 +132,10 @@
       (def phase-night-6 "phase-night-6") ;fix equipment
       (def phase-night-7 "phase-night-7") ;shelter upkeep
 
-      (def wood "wood")
-      (def metal "metal")
-
       (def leaders
         (list
          (create-leader "Wilson Fyre - Hunter" 44
-           (list "blackwood" "silent-peak" "cargo-ship" "Mine") (list "meat" "meat")   "shotgun")
+           (list "blackwood" "silent-peak" "cargo-ship" "mine") (list "meat" "meat")   "shotgun")
          (create-leader "Erin McCarthy - Dowser" 17
            (list "dam" "blackwood" "silent-peak" "cargo-ship")  (list "water" "water") "jerrycan")
          (create-leader "Lily-Rose Wely - Geek" 20
@@ -188,8 +185,8 @@
                         (add "Fix : " equip.desc " for cost -1 material" )
                         (λ (begin
                              (dbgl "player chose " _)
-                             (fix-equipment state equip (λ (return (sub 1 (list-len _.cost))))))))))
-                (flow-from-triple state.clientid "Fix an item (special"))))))
+                             (fix-equipment state equip (λ (return (sub 1 (list-len equip.cost))))))))))
+                (flow-from-triple state.clientid "Fix an item (special")))))
 
           (create-room
            "room-construction"
@@ -201,25 +198,168 @@
                (dbgl "room-construction was selected")
                (~>
                 state
-                (get-building-actions (λ (return (sub 2 _.cost))))
+                (get-building-actions (λ  (sub 2 _.cost)))
                 (map (λ (room)
                        (tuple
                         room.name
-                        (add "Build : " room.desc " for cost " (sub 2 _.cost) )
+                        (add "Build : " room.desc " for cost " (sub 2 room.cost) )
                         (λ (begin
                              (dbgl "player chose " _)
-                             (build-room state room (λ (return (sub 2 _.cost)))))))))
-                (flow-from-triple state.clientid "Build a room (special"))))))
+                             (build-room state room (λ  (sub 2 room.cost))))))))
+                (flow-from-triple state.clientid "Build a room (special")))))))
 
         ;todo: overcome event
       
 
-      (def axe
-        (create-equipment
-         "axe"
-         "an axe"
-         (list wood metal metal)
-         (λ (this state) (return #t))
-         (λ (this state) (dbgl "!"))))
+      (def equipment-prototypes
+        (list
+         (create-equipment
+          "axe"
+          "an axe (+2 wood from forest)"
+          (list "wood" "metal" "metal")
+          ;have to collect one wood first
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "bow"
+          "a bow (+1 food from forest)"
+          ; applies when entering forest
+          (list "wood" "wood" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "jerrycan"
+          "a jerrycan (+1 wood from dam)"
+          ; have to collect one water first
+          (list "wood" "metal" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+         
+         (create-equipment
+          "access-card"
+          "an access card (access the dam without the microchip cost)"
+          (list "wood" "microchips" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "ammunitions-kit"
+          "ammunitions kit (+2 ammo from military base)"
+          ;collect one first
+          (list "wood" "wood" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "crowbar"
+          "a crowbar (2 free microchips from the military base)"
+          (list "metal" "metal" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "chainsaw"
+          "a chainsaw (2 free wood when entering a city)"
+          (list "microchips" "microchips" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "flashlight"
+          "a flashlight (gain one survivor to any room when entering a city)"
+          (list "microchips" "microchips" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "pickaxe"
+          "a pickaxe (+2 metal from mine)"
+          ;collect one first
+          (list "wood" "wood" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+         
+         (create-equipment
+          "purifier"
+          "a water purifier (1 free water when entering the mine)"
+          (list "metal" "microchips" "microchips")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "grappling-hook"
+          "a grappling hook (allows you to access the next level of the cargo ship)"
+          (list "wood" "metal" "microchips")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+         
+         (create-equipment
+          "hacksaw"
+          "a hacksaw (2 free metal when enterting the cargo ship)"
+          (list "wood" "metal" "microchips")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "backpack"
+          "a backpack (+2 microchips from the fair)"
+          ;collect first
+          (list "wood" "wood" "wood")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "metal-detector"
+          "a metal detector (1 free canned food when entering the fair)"
+          (list)
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "shotgun"
+          "a shotgun (+1 hunting strength)"
+          (list "metal" "wood" "wood")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "bear-trap"
+          "a bear trap (+1 hunting strength)"
+          (list "wood" "metal" "metal")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "baseball-bat"
+          "a baseball bat (+1 pressure)"
+          (list "wood" "wood" "wood")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "battle-gear"
+          "a set of battle gear (-2 pressure)"
+          (list "wood" "microchips" "microchips")
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "exoskeleton"
+          "an exoskeleton (one hero has no movement distance limitation)"
+          (list)
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+
+         (create-equipment
+          "thermal-sensor"
+          "a thermal sensor (you can select a prey from the stack when hunting)"
+          (list)
+          (λ (this state) (return #t))
+          (λ (this state) (dbgl "!")))
+         
+
+         ))
                 
 ))

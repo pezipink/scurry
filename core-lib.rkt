@@ -39,6 +39,11 @@
          (append-list out (mapper i)))
        (return out))
 
+     (def-λ (id f) (return f))
+
+     (def-λ (clone-list lst)
+       (map lst id))
+     
      (def-λ (filter inputs pred)
        (def out (list))
        (for (i inputs)
@@ -110,7 +115,7 @@
        (for (k (keys obj))
          (dbgl k ":" (get-prop obj k))))
      
-     (def-λ (first pred input)
+     (def-λ (first input pred)
        (def res #f)
        (def i 0)
        (def len (list-len input))
@@ -120,7 +125,6 @@
          (++ i))
        (return res))
 
-           
      (def-λ (flow-from-triple triples clientid title)
        (def-flow req title)
        (def-obj result-map)
