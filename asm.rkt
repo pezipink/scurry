@@ -1073,9 +1073,9 @@
 
 (define-syntax (contains stx)
   (syntax-parse stx
-    [(_ str test)
-     #'`(,(eval-arg str)
-         ,(eval-arg test)
+    [(_ obj str)
+     #'`(,(eval-arg obj)
+         ,(eval-arg str)
          (contains))]))
 
 (define-syntax (ignore stx)
@@ -1252,6 +1252,10 @@
   (syntax-parse stx
     [(_ var)  (syntax/loc stx (def var (add 1 var)))]))
 
+(define-syntax (+= stx)
+  (syntax-parse stx
+    [(_ var n)  (syntax/loc stx (def var (add n var)))]))
+
 (define-syntax-parser prop+=
   [(_ obj key n)
    #'`(,(eval-arg obj) ;not very nice
@@ -1346,13 +1350,20 @@
 (define-syntax-parser def-λ
   [(_ (name args ...+) body ...)   
    #'(def name (λ (args ...)
-                 body ...))]
+  ;               (dbgl "in " name)
+                 body ...
+                 ;              (dbgl "out " name)
+                 ))]
   ; sugar a no-args lambda with _
   ; auto application calls this with #f
   ; which is ignored, so we dont have to
   ; have a speical unit() value
   [(_ (name) body ...)   
-   #'(def name (λ (_)  body ...))])
+   #'(def name (λ (_)
+;                 (dbgl "in " name)
+                 body ...
+ ;                (dbgl "out " name)
+                 ))])
 
 (define-syntax-parser import
     [(_ lib) #'lib])
@@ -1427,6 +1438,11 @@
   [(_ condition msg ... )
    #'(s-unless condition (dbgl "assert failed : " msg ...))])
 
+(define-syntax-parser clone
+  [(_ obj)
+   #'`(,(eval-arg obj)
+       (cloneobj))])
+
 ; useful for announcing in plae changes to lists
 (define-syntax-parser sync-prop
   [(_ obj prop )
@@ -1451,7 +1467,7 @@
 
 (define-syntax (app stx)
   (syntax-parse stx
-    #:datum-literals (= += -= < <= > >= <>)
+    #:datum-literals (<- = += -= < <= > >= <> ++)
     [(_ f:prop-accessor += val)
      #'(prop+= f.ident f.prop val)]
     [(_ f:prop-accessor ++)
@@ -1459,6 +1475,8 @@
     [(_ f:prop-accessor -= val)
        #'(prop-= f.ident f.prop val)]
     [(_ f:prop-accessor = val)
+     #'(eq (get-prop f.ident f.prop) val)]
+    [(_ f:prop-accessor <- val)
      #'(set-prop f.ident f.prop val)]
     [(_ f:prop-accessor < val)
      #'(lt f val)]
@@ -1476,7 +1494,8 @@
     [(app f)
      ;since we don't support unit we just "sugar" a
      ;call with no args with #fm sane as the def- λ
-     #'(~ f #f)]))
+     #'(~ f #f)]
+    ))
 
 
 

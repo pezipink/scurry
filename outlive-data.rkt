@@ -25,7 +25,7 @@
            (avail this state)))]
        ["action"
         (λ (this state)
-          (this.used? = #t)
+          (this.used? <- #t)
           (action this state))]
        ["used?" #f]
        others ...
@@ -47,7 +47,7 @@
            (avail this state)))]
        ["action"
         (λ (this state)
-          (this.used? = #t)
+          (this.used? <- #t)
           (action this state))]
        ["used?" #f]
        others ...
@@ -59,6 +59,15 @@
       (["strength" strength]
        ["moved?" #f]
        ["location" location]))])
+
+(define-syntax-parser create-leader
+  [(_ name age starting-locations resources equipment)
+   #'(create-obj
+      (["name" name]
+       ["age" age]
+       ["starting-locations" starting-locations]
+       ["resources" resources]
+       ["equipment" equipment]))])
 
 ; there are a few types in outlive
 ; 1) the global play state. this includes
@@ -123,6 +132,36 @@
       (def phase-night-6 "phase-night-6") ;fix equipment
       (def phase-night-7 "phase-night-7") ;shelter upkeep
 
+      (def wood "wood")
+      (def metal "metal")
+
+      (def leaders
+        (list
+         (create-leader "Wilson Fyre - Hunter" 44
+           (list "blackwood" "silent-peak" "cargo-ship" "Mine") (list "meat" "meat")   "shotgun")
+         (create-leader "Erin McCarthy - Dowser" 17
+           (list "dam" "blackwood" "silent-peak" "cargo-ship")  (list "water" "water") "jerrycan")
+         (create-leader "Lily-Rose Wely - Geek" 20
+           (list "blackwood" "silent-peak" "fair" "mine") (list "microchips" "microchips" "microchips") "backpack")
+         (create-leader "Jacob Rowlett - Miner" 66
+           (list "dam" "silent-peak" "cargo-ship" "fair") (list "metal" "metal" "microchips") "pickaxe")
+         (create-leader "Swifty Bingham - Engineer" 19
+           (list "dam" "military-base" "cargo-ship" "fair") (list "ammo" "microchips" "microchips") "thermal-sensor")
+         (create-leader "Grayson Pigott - Brawler" 38
+           (list "forest" "fair" "military-base" "fair" "mine") (list "ammo" "ammo" "microchips") "baseball-bat")
+         (create-leader "Liza Valentine - Soldier" 25
+           (list "military-base" "blackwood" "silent-peak" "cargo-ship") (list "ammo" "ammo" "ammo" ) "ammunitions-kit")
+         (create-leader "Solen Livrich - Prowler" 32
+           (list "forest" "blackwood" "cargo-ship" "mine") (list "canned-goods" "canned-goods") "grappling-hook")
+         (create-leader "Kooper Froste - Lumberjack" 51
+           (list "forest" "military-base" "blackwood" "silent-peak") (list "ammo" "wood" "wood") "axe")
+         (create-leader "Mary Koolpepper - Police Officer" 23
+           (list "forest" "blackwood" "cargo-ship" "mine") (list "blackwood-tile" "blackwood-tile" "silent-peak-tile") "flashlight")))
+         
+      (def-λ (create-city-tiles)
+        (list "holy-water" "survival-ration" "plank" "heap-of-metal" "household-appliance" "ammunition" "ammunition"
+              "seaweed-pills" "empty-cupboard" "empty-cupboard"))
+      
       (def-λ (create-airlock)
         ; the airlock is special and is never "activated"
         ; and its supply cost is calcuated elsewhere
@@ -131,23 +170,32 @@
                        (λ (this state) (dbgl "!"))))
       
       (def-λ (create-starting-rooms)
-        (def equip
-          (create-room "draw-equip-repair"
-                       "draw one equipment tile and repair for 1 materials less"
-                       3 2 3
-                       (λ (this state)
-                         (eq state.phase phase-night-6))
-                       (λ (this state)
-                         (dbgl "draw-equip-repair was selected"))
-                       ))
+        (list
+          (create-room
+           "draw-equip-repair"
+           "draw one equipment tile and repair for 1 materials less"
+           3 2 3
+           (λ (this state) (eq state.phase phase-night-6))
+           (λ (this state)
+             (begin
+               (dbgl "draw-equip-reapir was selected")
+               (~>
+                state
+                (get-fixing-actions (λ (return (sub 1 (list-len _.cost)))))
+                (map (λ (equip)
+                       (tuple
+                        equip.name
+                        (add "Fix : " equip.desc " for cost -1 material" )
+                        (λ (begin
+                             (dbgl "player chose " _)
+                             (fix-equipment state equip (λ (return (sub 1 (list-len _.cost))))))))))
+                (flow-from-triple state.clientid "Fix an item (special"))))))
 
-        (def construct
           (create-room
            "room-construction"
            "build one room with 2 less material"
            3 2 3
-           (λ (this state)
-             (eq state.phase phase-night-5))
+           (λ (this state) (eq state.phase phase-night-5))
            (λ (this state)
              (begin
                (dbgl "room-construction was selected")
@@ -164,8 +212,14 @@
                 (flow-from-triple state.clientid "Build a room (special"))))))
 
         ;todo: overcome event
-        (return (list equip construct))
-        )
+      
 
-
+      (def axe
+        (create-equipment
+         "axe"
+         "an axe"
+         (list wood metal metal)
+         (λ (this state) (return #t))
+         (λ (this state) (dbgl "!"))))
+                
 ))

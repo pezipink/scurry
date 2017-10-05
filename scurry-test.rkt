@@ -25,12 +25,12 @@
          "expected [1 2] but got " z)
  
  ; remove-list removes a single element
- 'brk
+
  (remove-list x 4)
  (assert (lists-same? (list 3 5) x)
          "expected [3 5] but got " x)
 
- (global.hello = "world")
+ (global.hello <- "world")
 
  (dbgl "hello global " global.hello)
  
@@ -39,8 +39,10 @@
     ["square" (λ (return (add _ _)))]
     ["cube" (λ (return (add _ _ _)))]
     ["twice" (λ (f x) (return (f (f x))))]
+    ["juan" (list 1 2 3)]
     ))
 
+ 
  (dbgl "10 squared :" (function-table.square 10))
  (dbgl "10 cubed :" (function-table.cube 10))
  (dbgl "10 squared squared :"
@@ -58,7 +60,7 @@
  ;for example, it usually takes 
 
  
- 'brk
+
  (def-λ (virtual-dispatch object default-object function-name arg)
    (if (contains  object function-name)
        ;call speciailised method
@@ -74,7 +76,24 @@
         "square" 10))
 
 
+ 'brk
+ (def obj2 (clone function-table))
+ (obj2.test <- "hello")
+
+ (when (obj2.test = "hello")
+   (dbgl "!"))
+ 
+ (dbgl "ft:")
+ (dbg-obj function-table) 
+ (dbgl "obj2")
+ (dbg-obj obj2) 
+
+ (append-list obj2.juan "88")
+ (dbgl "ft:")
+ (dbg-obj function-table) 
+ (dbgl "obj2")
+ (dbg-obj obj2) 
  
  'brk
- 
+ (dbgl "end")
 )
