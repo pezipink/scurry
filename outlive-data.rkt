@@ -5,6 +5,16 @@
 (require threading)
 (provide (all-defined-out))
 
+(define-syntax-parser create-map-location
+  [(_ name connections)
+   #'(create-obj
+      (["name" name]
+       ["heroes" (list)]
+       ["resources" 0]
+       ["connections" connections]
+       ["equipment" (list)]
+       ["prey" 0]))])
+
 (define-syntax-parser create-room
   [(_ name description cost supply-cost capacity avail action others ...)
    #'(create-obj
@@ -131,7 +141,7 @@
       (def phase-night-5 "phase-night-5") ;build and use rooms
       (def phase-night-6 "phase-night-6") ;fix equipment
       (def phase-night-7 "phase-night-7") ;shelter upkeep
-
+      
       (def leaders
         (list
          (create-leader "Wilson Fyre - Hunter" 44

@@ -57,10 +57,32 @@
 
 
  ;how to handle things that modify or override some function
- ;for example, it usually takes 
-
+ ;for example, it usually takes
  
+ (def mut 10)
+ (set-var mut 20)
+ (assert (mut = 20) "mutation not working!") 
 
+ (def-λ (mutation-test)
+   ; mutating outside of closure scope
+   (mut <- 30)
+   (assert (mut = 30) "mutation not working!")
+   ; shadow
+   (def mut 50)
+   (assert (mut = 50) "mutation not working!"))
+
+ (mutation-test)
+ (assert (mut = 30) "mutation not working!")
+
+ 'brk
+ (def-λ (mutation-test byval)
+   (assert (mut = 30) "mutation not working!")
+   (byval <- 40)
+   (assert (mut = 30) "mutation not working!")
+   (assert (byval = 40) "mutation not working!"))
+ 
+ (mutation-test mut)
+ 
  (def-λ (virtual-dispatch object default-object function-name arg)
    (if (contains  object function-name)
        ;call speciailised method
@@ -77,7 +99,7 @@
 
 
  'brk
- (def obj2 (clone function-table))
+ (def obj2 (clone-obj function-table))
  (obj2.test <- "hello")
 
  (when (obj2.test = "hello")

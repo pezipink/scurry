@@ -14,7 +14,7 @@
      ["materials" (list "wood" "metal" "microchips")]
      ["supplies"  (list "meat" "water" "canned-gooods")]
      [else (list cost-type)]))
-
+      
  (def-λ (pay-survivors player-state amount)
    (def shelter player-state.shelter)
    ; survivors can be taken from rooms with workers or the airlock
@@ -149,6 +149,12 @@
     shelter.stuff
     (filter (λ (return (_.avail? _ player-state))))))
 
+  (def-λ (try-get-from-resources type amount)
+    (def res global.resources)
+    (def actual (min amount (get-prop res type)))
+    (prop-= res type actual)
+    (return actual))
+    
  (import outlive-data)
 
  (def players (vals (get-players)))
@@ -166,8 +172,18 @@
      ["survivors" 100])))
  (global.phase <- phase-dawn)
  (global.events <- (list))
+ (global.locations <-
+   (create-obj
+    (["dam"           (create-map-location "dam" (list "forest" "military-base"))]
+     ["forest"        (create-map-location "forest" (list "dam" "blackwood"))]
+     ["blackwood"     (create-map-location "blackwood" (list "forest" "fair"))]
+     ["fair"          (create-map-location "fair" (list "blackwood" "cargo-ship"))]
+     ["cargo-ship"    (create-map-location "cargo-ship" (list "fair" "mine"))]
+     ["mine"          (create-map-location "mine" (list "cargo-ship" "silent-peak"))]
+     ["silent-peak"   (create-map-location "silent-peak" (list "mine" "military-base"))]
+     ["military-base" (create-map-location "military-base" (list "silent-peak" "dam"))])))
  (global.equipment <- (list))
-
+ 
  ;each piece of equipment exists twice
  (for (e equipment-prototypes)
    (append-list global.equipment (clone-obj e))
@@ -194,7 +210,12 @@
 
       ["radioactivity" 0]
       ["leader" ""] ;todo
-      
+
+      ;killed prey
+      ["prey" (create-obj
+               (["3" 0]["4" 0]
+                ["5" 0]["6" 0]
+                ["7" 0]))]
       ))
 
    ;(dbg-obj shelter)
@@ -358,8 +379,8 @@
           ]
          [phase-night-7
           (dbgl "\t\tshelter upkeep")
-          (for (s shelter.stuff)
-            (s.used <- #f))
+          (for (s shelter.stuff) (s.used <- #f))
+          (for (h p.heroes) (h.moved <- #f))
           (p.phase <- phase-day-2)]))))
 
  ;main game loop
