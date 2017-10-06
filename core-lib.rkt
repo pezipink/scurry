@@ -27,9 +27,6 @@
      (def-λ (sum inputs)
        (fold (λ (a b) (add a b)) inputs 0))
 
-     (def-λ (each l f)
-       (for (x l) (f x)))
-
      (def-λ (each inputs f)
        (for (i inputs) (f i)))
      
@@ -121,7 +118,7 @@
        (def len (list-len input))
        (while (and (lt i len) (eq res #f))
          (when (pred (nth i input))
-           (def res (nth i input)))
+           (res <- (nth i input)))
          (++ i))
        (return res))
 

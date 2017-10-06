@@ -28,7 +28,7 @@
      (if (eq (list-len rooms) 0)
          (begin
            (dbgl "no more survivors!")
-           (def paid amount)) ; need <- or set here!
+           (paid <- amount)) 
          (begin
            (~>
             (map rooms (λ (room)

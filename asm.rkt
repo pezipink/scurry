@@ -1250,11 +1250,11 @@
 
 (define-syntax (++ stx)
   (syntax-parse stx
-    [(_ var)  (syntax/loc stx (def var (add 1 var)))]))
+    [(_ var)  (syntax/loc stx (set-var var (add 1 var)))]))
 
 (define-syntax (+= stx)
   (syntax-parse stx
-    [(_ var n)  (syntax/loc stx (def var (add n var)))]))
+    [(_ var n)  (syntax/loc stx (set-var var (add n var)))]))
 
 (define-syntax-parser prop+=
   [(_ obj key n)
