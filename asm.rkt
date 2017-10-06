@@ -336,6 +336,18 @@
 
 
 (begin-for-syntax
+
+   (define const-strings-set (make-hash))
+   (define (add-const-string syn syn2)
+     (define key (syntax-e syn))
+     (define val (syntax-e syn2))
+     (hash-set! const-strings-set key val))
+   (define (is-const? str)     
+     (hash-has-key? const-strings-set str))
+   )
+  
+
+(begin-for-syntax
   (define scoped-bindings-stack (box (list (mutable-set))))
   (define (push-scoped-stack)
     (let* ([lst (unbox scoped-bindings-stack)]
@@ -350,11 +362,16 @@
   (define (peek-scoped-stack)
     (let ([lst (unbox scoped-bindings-stack)])
       (car lst)))
-            
+
+  (define (add-scoped-lambda-binding stx-name stx)
+    (let ([name (syntax-e stx-name)]
+          [scoped (peek-scoped-stack)])
+      (set-add! scoped name)))
+
   (define (add-scoped-binding stx-name stx)
     (let ([name (syntax-e stx-name)]
           [scoped (peek-scoped-stack)])
-      (when (set-member? scoped name)
+      (when (in-scope? name)
         (writeln
          (format "warning: ~a is already in scope at ~a"
                  name (source-location->string stx))))
@@ -376,6 +393,14 @@
     
 
 (begin-for-syntax
+  (define-syntax-class const-value
+    #:opaque
+    (pattern x:id
+             #:with name  (symbol->string (syntax-e #'x))
+             #:when (is-const? (symbol->string (syntax-e #'x)))
+             #:with value (hash-ref const-strings-set (symbol->string (syntax-e #'x)))
+             ))
+
   (define-syntax-class scoped-binding
     #:description "identifier in scope"
     #:opaque
@@ -392,7 +417,6 @@
              #:with name (symbol->string (syntax-e #'x))
              )))
 
-
 (begin-for-syntax
   (define-syntax-class prop-accessor
     #:description "property accessor"
@@ -403,6 +427,21 @@
              #:when (in-scope?  (syntax-e #'ident1))
              #:with prop (cadr (string-split (symbol->string (syntax-e #'x)) "."))
              )))
+
+
+(define-syntax-parser def-const-string
+  [(_ id:binding)
+   (add-const-string #'id.name #'id.name)
+   #''()]
+  [(_ id:binding str:str)
+   (add-const-string #'id.name #'str)
+   #''()])
+          
+(define-syntax-parser def-const-strings
+  [(_ str:binding ...)
+   #'((def-const-string str) ...) ]
+  [(_ [id:binding str:str] ... )
+   #'((def-const-string id str) ...)])
 
 
 (define-syntax (say-client stx)
@@ -464,7 +503,7 @@
        ]
     [(_ (arg:binding) body)
      (push-scoped-stack)
-     (add-scoped-binding #'arg.name stx)
+     (add-scoped-lambda-binding #'arg.name stx)
      (with-syntax
        ([label (new-label)])
        #'`(           
@@ -708,6 +747,8 @@
      ; if this is an identifier then it will be a string table lookup
      ; to a variable       
    (syntax/loc this-syntax '((ldvar id.name)))]
+  [(_ id:const-value)
+   #'`((ldvals id.value))]
   [(_ expr:str)     
    #''((ldvals expr))]
   [(_ expr:integer)
@@ -1470,6 +1511,7 @@
           (s-begin expr ...)] ...))
        
    ])
+
 
 (define-syntax (app stx)
   (syntax-parse stx

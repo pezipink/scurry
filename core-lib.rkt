@@ -21,7 +21,7 @@
      
      (def-λ (fold inputs acc folder)
        (for (i inputs)
-         (def acc (folder acc i)))
+         (acc <- (folder acc i)))
        (return acc))
 
      (def-λ (sum inputs)

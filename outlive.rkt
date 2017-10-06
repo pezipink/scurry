@@ -4,15 +4,16 @@
 (require "outlive-data.rkt")
 (require threading)
 (require syntax/parse/define)
-
+  
 (scurry
  (import core-lib)
+ (import outlive-consts)
 
- (def-λ (expand-cost-type cost-type)
+ (def-λ (expand-cost-type cost-type)   
    (case cost-type
-     ["resources" (list "wood" "metal" "microchips" "ammo")]
-     ["materials" (list "wood" "metal" "microchips")]
-     ["supplies"  (list "meat" "water" "canned-gooods")]
+     ["resources" (list  wood metal microchips ammo)]
+     ["materials" (list wood metal microchips)]
+     ["supplies"  (list meat water canned-goods)]
      [else (list cost-type)]))
       
  (def-λ (pay-survivors player-state amount)
@@ -162,26 +163,26 @@
  (global.turn <- 0)
  (global.resources <-
    (create-obj
-    (["wood" 30]
-     ["metal" 30]
-     ["microchips" 30]
-     ["water" 30]
-     ["meat" 30]
-     ["canned-goods" 30]
-     ["ammo" 30]
-     ["survivors" 100])))
+    ([wood 30]
+     [metal 30]
+     [microchips 30]
+     [water 30]
+     [meat 30]
+     [canned-goods 30]
+     [ammo 30]
+     [survivors 100])))
  (global.phase <- phase-dawn)
  (global.events <- (list))
  (global.locations <-
    (create-obj
-    (["dam"           (create-map-location "dam" (list "forest" "military-base"))]
-     ["forest"        (create-map-location "forest" (list "dam" "blackwood"))]
-     ["blackwood"     (create-map-location "blackwood" (list "forest" "fair"))]
-     ["fair"          (create-map-location "fair" (list "blackwood" "cargo-ship"))]
-     ["cargo-ship"    (create-map-location "cargo-ship" (list "fair" "mine"))]
-     ["mine"          (create-map-location "mine" (list "cargo-ship" "silent-peak"))]
-     ["silent-peak"   (create-map-location "silent-peak" (list "mine" "military-base"))]
-     ["military-base" (create-map-location "military-base" (list "silent-peak" "dam"))])))
+    ([dam           (create-map-location dam (list forest military-base))]
+     [forest        (create-map-location forest (list dam blackwood))]
+     [blackwood     (create-map-location blackwood (list forest fair))]
+     [fair          (create-map-location fair (list blackwood cargo-ship))]
+     [cargo-ship    (create-map-location cargo-ship (list fair mine))]
+     [mine          (create-map-location mine (list cargo-ship silent-peak))]
+     [silent-peak   (create-map-location silent-peak (list mine military-base))]
+     [military-base (create-map-location military-base (list silent-peak dam))])))
  (global.equipment <- (list))
  
  ;each piece of equipment exists twice
@@ -196,17 +197,17 @@
      (["airlock" (create-airlock)]
       ["stuff" (create-starting-rooms)] ; todo: distribute advanced rooms
 
-      ["ammo" 0]
+      [ammo 0]
 
       ;supplies
-      ["water" 0]
-      ["meat" 0 ]
-      ["canned-goods" 0]
+      [water 0]
+      [meat 0 ]
+      [canned-goods 0]
       
       ;materials
-      ["microchips" 0]
-      ["metal" 0]
-      ["wood" 0]
+      [microchips 0]
+      [metal 0]
+      [wood 0]
 
       ["radioactivity" 0]
       ["leader" ""] ;todo
@@ -243,8 +244,8 @@
      (shelter.leader <- leader)
      (for (r leader.resources)
        (case r
-         ["blackwood-tile" (dbgl "blackwood tile")]
-         ["silent-peak-tile" (dbgl "silent peak tile")]
+         [blackwood-tile (dbgl blackwood-tile)]
+         [silent-peak-tile (dbgl silent-peak-tile)]
          [else (prop+= shelter r 1)]))
 
      (def equip (first global.equipment (λ (_.name = leader.equipment))))
