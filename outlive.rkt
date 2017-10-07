@@ -71,25 +71,25 @@
            (flow-end)
            (++ paid)))))
         
- (def-λ (pay-cost player-state cost-type amount)   
-   (def paid 0)
-   (def shelter player-state.shelter)
-   
-   (def-λ (create-req type)
-     (tuple type
-       (add "pay 1 " type "(" (get-prop shelter type) " remaining)")
-       (λ (prop-= shelter type 1))))
-
-   (while (lt paid amount)
-     (~>
-      (expand-cost-type cost-type)
-      (filter (λ (gt (get-prop shelter _) 0)))
-      (map create-req)
-      (flow-from-triple
-        player-state.clientid
-        (add "pay the cost (" paid "/" amount ")")))
-     (flow-end)
-     (++ paid)))
+ (def-λ (pay-cost player-state cost-type amount)
+   (let
+     ([paid 0]
+      [shelter player-state.shelter]
+      [create-req
+       (λ (type)
+         (tuple type
+           (add "pay 1 " type "(" (get-prop shelter type) " remaining)")
+           (λ (prop-= shelter type 1))))])
+     (while (lt paid amount)
+       (~>
+        (expand-cost-type cost-type)
+        (filter (λ (gt (get-prop shelter _) 0)))
+        (map create-req)
+        (flow-from-triple
+         player-state.clientid
+         (add "pay the cost (" paid "/" amount ")")))
+       (flow-end)
+       (++ paid))))
 
  (def-λ (shelter-has-enough-specific shelter cost-types amount)
    (dbgl "in shelter-has-enough-speicifc" amount)
@@ -143,19 +143,19 @@
     (filter (λ (shelter-has-enough-specific
                 shelter _.cost (cost-modifier _))))))
 
-  (def-λ (get-stuff-activations player-state)
+ (def-λ (get-stuff-activations player-state)
    (dbgl "in get stuff activations")
    (def shelter player-state.shelter)
    (~>
     shelter.stuff
     (filter (λ (return (_.avail? _ player-state))))))
 
-  (def-λ (try-get-from-resources type amount)
-    (def res global.resources)
-    (def actual (min amount (get-prop res type)))
-    (prop-= res type actual)
-    (return actual))
-    
+ (def-λ (try-get-from-resources type amount)
+   (def res global.resources)
+   (def actual (min amount (get-prop res type)))
+   (prop-= res type actual)
+   (return actual))
+ 
  (import outlive-data)
 
  (def players (vals (get-players)))
@@ -213,10 +213,11 @@
       ["leader" ""] ;todo
 
       ;killed prey
-      ["prey" (create-obj
-               (["3" 0]["4" 0]
-                ["5" 0]["6" 0]
-                ["7" 0]))]
+      ["prey"
+       (create-obj
+        (["3" 0]["4" 0]
+         ["5" 0]["6" 0]
+         ["7" 0]))]
       ))
 
    ;(dbg-obj shelter)

@@ -23,6 +23,7 @@
 (provide
  (except-out
   (all-defined-out)
+  s-let
   s-for
   s-sort
   s-when
@@ -44,6 +45,7 @@
 (provide
  (rename-out
   [app #%app]
+  [s-let let]
   [s-for for]
   [s-sort sort]
   [s-case case]
@@ -843,7 +845,14 @@
      #'`(,(eval-arg obj)
          ,(eval-arg location)
          (moveobj))]))
-          
+
+(define-syntax-parser s-let
+  [(_ ([id expr]... ) body ... )
+   (push-scoped-stack)
+      #'(s-begin
+          (def id expr) ...          
+          body ... )])
+
 (define-syntax-parser def-flow
   [(_ name:binding title)
    (add-scoped-binding #'name.name this-syntax)

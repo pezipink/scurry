@@ -130,7 +130,7 @@
 
        ; equipment
        shotgun jerrycan backpack pickaxe thermal-sensor baseball-bat ammunitions-kit
-       grappling-hook axe flashlight
+       grappling-hook axe flashlight 
 
        holy-water survival-ration plank heap-of-metal household-appliance ammunition
        seaweed-pills empty-cupboard
