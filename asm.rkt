@@ -651,7 +651,7 @@
   (syntax-parse stx
     [(_ obj key)
      #'`(,(eval-arg obj)
-         (eval-arg key)
+         ,(eval-arg key)
          (delprop))]))
 
 (define-syntax (set-prop stx)
