@@ -7,7 +7,7 @@
 (define-syntax (core-lib stx)
   #'(begin
      (def global (global-obj))
-      
+     
      (def-λ (mod-global-list mapper key)
        (def list (get-global key))
        (mapper list)
@@ -47,6 +47,13 @@
          (when (pred i)
            (append-list out i)))
        (return out))
+
+     (def-λ (filter-map inputs pred mapper)
+       (def out (list))
+       (for (i inputs)
+         (when (pred i)
+           (append-list out (mapper i))))
+       (return out))
      
      (def-λ (partition inputs pred)
        (def x (list))
@@ -70,11 +77,10 @@
      
      (def-λ (append-many dest source)
        (for (i source) (append-list dest i))
-       (return dest)
-       )
+       (return dest))
 
-     ;; (def-λ (prepend-many  dest source)
-     ;;   (for (i source) (prepend-list dest i)))
+     (def-λ (prepend-many  dest source)
+       (for (i source) (prepend-list dest i)))
      
      ;; (def-λ (deal from-obj from-prop to-obj to-prop n)
      ;;   ;todo: visibilty
@@ -126,8 +132,8 @@
        (def-flow req title)
        (def-obj result-map)
        (for (t triples)
-                (set-prop result-map t.item0 t.item2)
-                (add-flow-action req t.item0 t.item1))
+         (set-prop result-map t.item0 t.item2)
+         (add-flow-action req t.item0 t.item1))
        (def res (flow req clientid))
        ((get-prop result-map res) res))
 

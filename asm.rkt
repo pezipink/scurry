@@ -12,7 +12,7 @@
 (require racket/string)
 (require (for-syntax racket/syntax))
 
-;(string-join (cdr (string-split "hello.world.three" ".")) ".")
+;(string-join (cadr (string-split "hello.world.three.four" ".")) ".")
 
 (require threading)
 (require (for-syntax threading))
@@ -167,105 +167,109 @@
       (match next
         [(list 'brk) 0]
         [(list 'pop) 1]
-        [(list 'ldval x)    (flatten (list 2 (get-int-bytes(check-string x))))]
-        [(list 'ldvals x)    (flatten (list 3 (get-int-bytes(check-string x))))]
-        [(list 'ldvalb x)    (flatten (list 4 (get-int-bytes(check-string x))))]
-        [(list 'ldvar x)    (flatten (list 5 (get-int-bytes(check-string x))))]
-        [(list 'stvar x)    (flatten (list 6 (get-int-bytes(check-string x))))]
-        [(list 'p_stvar x)    (flatten (list 7 (get-int-bytes(check-string x))))]
-        [(list 'rvar x)    (flatten (list 8 (get-int-bytes(check-string x))))]
-        [(list 'ldprop) 9]
-        [(list 'p_ldprop) 10]
-        [(list 'stprop) 11]
-        [(list 'p_stprop) 12]
-        [(list 'inc) 13]
-        [(list 'dec) 14]
-        [(list 'add) 15]
-        [(list 'sub) 16]
-        [(list 'mul) 17]
-        [(list 'div) 18]
-        [(list 'mod) 19]
-        [(list 'rndi) 20]
-        [(list 'startswith) 21]
-        [(list 'p_startswith) 22]
-        [(list 'endswith) 23]
-        [(list 'p_endswith) 24]
-        [(list 'contains) 25]
-        [(list 'p_contains) 26]
-        [(list 'indexof) 27]
-        [(list 'p_indexof) 28]
-        [(list 'substring) 29]
-        [(list 'p_substring) 30]
-        [(list 'ceq) 31]
-        [(list 'cne) 32]
-        [(list 'cgt) 33]
-        [(list 'cgte) 34]
-        [(list 'clt) 35]
-        [(list 'clte) 36]
-        [(list 'beq x)    (flatten (list 37 (get-int-bytes(check-string x))))]
-        [(list 'bne x)    (flatten (list 38 (get-int-bytes(check-string x))))]
-        [(list 'bgt x)    (flatten (list 39 (get-int-bytes(check-string x))))]
-        [(list 'blt x)    (flatten (list 40 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 41 (get-int-bytes(check-string x))))]
-        [(list 'createobj) 42]
-        [(list 'cloneobj) 43]
-        [(list 'getobj) 44]
-        [(list 'getobjs) 45]
-        [(list 'delprop) 46]
-        [(list 'p_delprop) 47]
-        [(list 'delobj) 48]
-        [(list 'moveobj) 49]
-        [(list 'p_moveobj) 50]
-        [(list 'createlist) 51]
-        [(list 'appendlist) 52]
-        [(list 'p_appendlist) 53]
-        [(list 'prependlist) 54]
-        [(list 'p_prependlist) 55]
-        [(list 'removelist) 56]
-        [(list 'p_removelist) 57]
-        [(list 'len) 58]
-        [(list 'p_len) 59]
-        [(list 'index) 60]
-        [(list 'p_index) 61]
-        [(list 'keys) 62]
-        [(list 'values) 63]
-        [(list 'syncprop) 64]
-        [(list 'getloc) 65]
-        [(list 'genloc) 66]
-        [(list 'genlocref) 67]
-        [(list 'setlocsibling) 68]
-        [(list 'p_setlocsibling) 69]
-        [(list 'setlocchild) 70]
-        [(list 'p_setlocchild) 71]
-        [(list 'setlocparent) 72]
-        [(list 'p_setlocparent) 73]
-        [(list 'getlocsiblings) 74]
-        [(list 'p_getlocsiblings) 75]
-        [(list 'getlocchildren) 76]
-        [(list 'p_getlocchildren) 77]
-        [(list 'getlocparent) 78]
-        [(list 'p_getlocparent) 79]
-        [(list 'setvis) 80]
-        [(list 'p_setvis) 81]
-        [(list 'adduni) 82]
-        [(list 'deluni) 83]
-        [(list 'splitat) 84]
-        [(list 'shuffle) 85]
-        [(list 'sort) 86]
-        [(list 'sortby) 87]
-        [(list 'genreq) 88]
-        [(list 'addaction) 89]
-        [(list 'p_addaction) 90]
-        [(list 'suspend) 91]
-        [(list 'cut) 92]
-        [(list 'say) 93]
-        [(list 'pushscope) 94]
-        [(list 'popscope) 95]
-        [(list 'lambda x)    (flatten (list 96 (get-int-bytes(check-string x))))]
-        [(list 'apply) 97]
-        [(list 'ret) 98]
-        [(list 'dbg) 99]
-        [(list 'dbgl) 100]
+        [(list 'swap) 2]
+        [(list 'swapn x)    (flatten (list 3 (get-int-bytes(check-string x))))]
+        [(list 'dup) 4]
+        [(list 'ldval x)    (flatten (list 5 (get-int-bytes(check-string x))))]
+        [(list 'ldvals x)    (flatten (list 6 (get-int-bytes(check-string x))))]
+        [(list 'ldvalb x)    (flatten (list 7 (get-int-bytes(check-string x))))]
+        [(list 'ldvar x)    (flatten (list 8 (get-int-bytes(check-string x))))]
+        [(list 'stvar x)    (flatten (list 9 (get-int-bytes(check-string x))))]
+        [(list 'p_stvar x)    (flatten (list 10 (get-int-bytes(check-string x))))]
+        [(list 'rvar x)    (flatten (list 11 (get-int-bytes(check-string x))))]
+        [(list 'ldprop) 12]
+        [(list 'p_ldprop) 13]
+        [(list 'stprop) 14]
+        [(list 'p_stprop) 15]
+        [(list 'inc) 16]
+        [(list 'dec) 17]
+        [(list 'neg) 18]
+        [(list 'add) 19]
+        [(list 'sub) 20]
+        [(list 'mul) 21]
+        [(list 'div) 22]
+        [(list 'mod) 23]
+        [(list 'rndi) 24]
+        [(list 'startswith) 25]
+        [(list 'p_startswith) 26]
+        [(list 'endswith) 27]
+        [(list 'p_endswith) 28]
+        [(list 'contains) 29]
+        [(list 'p_contains) 30]
+        [(list 'indexof) 31]
+        [(list 'p_indexof) 32]
+        [(list 'substring) 33]
+        [(list 'p_substring) 34]
+        [(list 'ceq) 35]
+        [(list 'cne) 36]
+        [(list 'cgt) 37]
+        [(list 'cgte) 38]
+        [(list 'clt) 39]
+        [(list 'clte) 40]
+        [(list 'beq x)    (flatten (list 41 (get-int-bytes(check-string x))))]
+        [(list 'bne x)    (flatten (list 42 (get-int-bytes(check-string x))))]
+        [(list 'bgt x)    (flatten (list 43 (get-int-bytes(check-string x))))]
+        [(list 'blt x)    (flatten (list 44 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 45 (get-int-bytes(check-string x))))]
+        [(list 'createobj) 46]
+        [(list 'cloneobj) 47]
+        [(list 'getobj) 48]
+        [(list 'getobjs) 49]
+        [(list 'delprop) 50]
+        [(list 'p_delprop) 51]
+        [(list 'delobj) 52]
+        [(list 'moveobj) 53]
+        [(list 'p_moveobj) 54]
+        [(list 'createlist) 55]
+        [(list 'appendlist) 56]
+        [(list 'p_appendlist) 57]
+        [(list 'prependlist) 58]
+        [(list 'p_prependlist) 59]
+        [(list 'removelist) 60]
+        [(list 'p_removelist) 61]
+        [(list 'len) 62]
+        [(list 'p_len) 63]
+        [(list 'index) 64]
+        [(list 'p_index) 65]
+        [(list 'keys) 66]
+        [(list 'values) 67]
+        [(list 'syncprop) 68]
+        [(list 'getloc) 69]
+        [(list 'genloc) 70]
+        [(list 'genlocref) 71]
+        [(list 'setlocsibling) 72]
+        [(list 'p_setlocsibling) 73]
+        [(list 'setlocchild) 74]
+        [(list 'p_setlocchild) 75]
+        [(list 'setlocparent) 76]
+        [(list 'p_setlocparent) 77]
+        [(list 'getlocsiblings) 78]
+        [(list 'p_getlocsiblings) 79]
+        [(list 'getlocchildren) 80]
+        [(list 'p_getlocchildren) 81]
+        [(list 'getlocparent) 82]
+        [(list 'p_getlocparent) 83]
+        [(list 'setvis) 84]
+        [(list 'p_setvis) 85]
+        [(list 'adduni) 86]
+        [(list 'deluni) 87]
+        [(list 'splitat) 88]
+        [(list 'shuffle) 89]
+        [(list 'sort) 90]
+        [(list 'sortby) 91]
+        [(list 'genreq) 92]
+        [(list 'addaction) 93]
+        [(list 'p_addaction) 94]
+        [(list 'suspend) 95]
+        [(list 'cut) 96]
+        [(list 'say) 97]
+        [(list 'pushscope) 98]
+        [(list 'popscope) 99]
+        [(list 'lambda x)    (flatten (list 100 (get-int-bytes(check-string x))))]
+        [(list 'apply) 101]
+        [(list 'ret) 102]
+        [(list 'dbg) 103]
+        [(list 'dbgl) 104]
 
                 ))))
 
@@ -420,14 +424,42 @@
              )))
 
 (begin-for-syntax
+    
+    ;; (define-syntax-class prop-accessor
+    ;; #:description "property accessor"
+    ;; (pattern x:id
+    ;;          #:do   [(define sym (syntax-e #'x))
+    ;;                  (define sym-str (symbol->string sym))]
+    ;;          #:when (string-contains? sym-str ".")
+    ;;          #:do   [(define split (string-split sym-str "."))
+    ;;                  (define head (car split))
+    ;;                  (define head-sym (string->symbol head))
+    ;;                  (define rest (string-join (cdr split) "."))
+    ;;                  (define prop
+    ;;                    (if (string-contains? rest ".")
+    ;;                        (string->symbol rest)
+    ;;                        rest))] 
+    ;;          #:when (in-scope? head)
+    ;;          #:with ident head-sym
+    ;;          #:with prop prop
+  ;;          ))
+  ;; (define-splicing-syntax-class prop-accessors
+  ;;   [pattern {~seq [eq-expr case-title-expr true-expr] ...}
+             ;; #:with [n ...] (map ~a (range (length (attribute eq-expr))))])
   (define-syntax-class prop-accessor
     #:description "property accessor"
     (pattern x:id
-             #:when (string-contains? (symbol->string (syntax-e #'x)) ".")
-             #:with ident1 (car (string-split (symbol->string (syntax-e #'x)) "."))
-             #:with ident (string->symbol (car (string-split (symbol->string (syntax-e #'x)) ".")))
-             #:when (in-scope?  (syntax-e #'ident1))
-             #:with prop (cadr (string-split (symbol->string (syntax-e #'x)) "."))
+             #:do   [(define sym (syntax-e #'x))
+                     (define sym-str (symbol->string sym))]
+             #:when (string-contains? sym-str ".")
+             #:do   [(define split (string-split sym-str "."))
+                     (define head (car split))
+                     (define head-sym (string->symbol head))
+                     (define prop (cadr split))]
+             #:when (in-scope? head)
+             #:with ident head-sym
+             #:with [prop ...] (cdr split)
+             
              )))
 
 
@@ -610,20 +642,27 @@
      
 (define-syntax (get-prop stx)
   (syntax-parse stx
-    [(_ obj key)
+    [(_ obj key ...)
      #'`(,(eval-arg obj)
-         ,(eval-arg key)
-         (ldprop))]))
+         (,(eval-arg key)
+           (ldprop)) ...)]))
 
 (define-syntax (del-prop stx)
   (syntax-parse stx
     [(_ obj key)
      #'`(,(eval-arg obj)
-         ,(eval-arg key)
+         (eval-arg key)
          (delprop))]))
 
 (define-syntax (set-prop stx)
   (syntax-parse stx
+    [(_ obj key ... last-key val)
+     #'`(,(eval-arg obj)
+         (,(eval-arg key)
+          (ldprop)) ...
+         ,(eval-arg last-key)
+         ,(eval-arg val)
+         (stprop))]
     [(_ obj key val)
      #'`(,(eval-arg obj)
          ,(eval-arg key)
@@ -744,7 +783,7 @@
 (define-syntax-parser eval-arg
 ;  (wdb "eval arg ~a" this-syntax)
   [(_ id:prop-accessor)
-   #'(get-prop id.ident id.prop)]  
+   #'(get-prop id.ident id.prop ...)]  
   [(_ id:scoped-binding)   
      ; if this is an identifier then it will be a string table lookup
      ; to a variable       
@@ -1307,32 +1346,61 @@
     [(_ var n)  (syntax/loc stx (set-var var (add n var)))]))
 
 (define-syntax-parser prop+=
-  [(_ obj key n)
-   #'`(,(eval-arg obj) ;not very nice
-       ,(eval-arg key)     
+  [(_ obj key ...+ final-key n)
+   #'`(,(eval-arg final-key)
+       (dup)
        ,(eval-arg obj)
-       ,(eval-arg key)     
-       (ldprop)
+       (,(eval-arg key)
+        (ldprop)) ...       
+       (swap)
+       (p_ldprop)
+       (swapn #x00010002)
+       ,(eval-arg n)
+       (add)
+       (stprop) )]              
+  [(_ obj key n)
+   #'`(,(eval-arg key)
+       (dup)       
+       ,(eval-arg obj)       
+       (swap)
+       (p_ldprop)
+       (swapn #x00010002)
        ,(eval-arg n)
        (add)
        (stprop)
        )])
 
 (define-syntax-parser prop-=
-  [(_ obj key n)
-   #'`(,(eval-arg obj) ;not very nice
-       ,(eval-arg key)     
-       ,(eval-arg n)
+  [(_ obj key ...+ final-key n)
+   #'`(,(eval-arg final-key)
+       (dup)
        ,(eval-arg obj)
-       ,(eval-arg key)     
-       (ldprop)
-       (sub)
+       (,(eval-arg key)
+        (ldprop)) ...
+       (swap)
+       (p_ldprop)
+       (swapn #x00010002)
+       ,(eval-arg n)
+       (neg)
+       (add)
+       (stprop)
+       )]
+  [(_ obj key n)
+   #'`(,(eval-arg key)
+       (dup)
+       ,(eval-arg obj)
+       (swap)
+       (p_ldprop)
+       (swapn #x00010002)
+       ,(eval-arg n)
+       (neg)
+       (add)
        (stprop)
        )])
 
 (define-syntax (-- stx)
   (syntax-parse stx
-    [(_ var)  #'(def var (sub 1 var))]))
+    [(_ var)  #'(set-var var (sub 1 var))]))
 
 (define-syntax-parser ~
   [(_ f args ...)
@@ -1416,7 +1484,7 @@
                  ))])
 
 (define-syntax-parser import
-    [(_ lib) #'lib])
+  [(_ lib)  #'lib])
 
 (begin-for-syntax
   (define-splicing-syntax-class bindings #:datum-literals (:)
@@ -1526,19 +1594,21 @@
   (syntax-parse stx
     #:datum-literals (<- != = += -= < <= > >= ++)
     [(_ f:prop-accessor += val)
-     #'(prop+= f.ident f.prop val)]
+     #'(prop+= f.ident f.prop ... val)]
+    [(_ f:scoped-binding += val)
+     #'(set-var f (add f val))]
     [(_ f:prop-accessor ++)
      #'(++ f)]
     [(_ f:prop-accessor -= val)
-       #'(prop-= f.ident f.prop val)]
+       #'(prop-= f.ident f.prop ... val)]
     [(_ f:prop-accessor = val)
-     #'(eq (get-prop f.ident f.prop) val)]
+     #'(eq (get-prop f.ident f.prop ...) val)]
     [(_ f = val)
-     #'(eq f val)]
+     #'(eq f val)]    
     [(_ f:prop-accessor <- val)
-     #'(set-prop f.ident f.prop val)]
+     #'(set-prop f.ident f.prop ... val)]
     [(_ f:scoped-binding <- val)
-     #'(set-var f val)]
+     #'(set-var f val)]    
     [(_ f:prop-accessor < val)
      #'(lt f val)]
     [(_ f:prop-accessor > val)

@@ -1,4 +1,5 @@
 #lang racket
+
 (require "asm.rkt")
 (require "core-lib.rkt")
 (require "outlive-data.rkt")
@@ -11,9 +12,9 @@
 
  (def-λ (expand-cost-type cost-type)   
    (case cost-type
-     ["resources" (list  wood metal microchips ammo)]
-     ["materials" (list wood metal microchips)]
-     ["supplies"  (list meat water canned-goods)]
+     [resources (list  wood metal microchips ammo)]
+     [materials (list wood metal microchips)]
+     [supplies  (list meat water canned-goods)]
      [else (list cost-type)]))
       
  (def-λ (pay-survivors player-state amount)
@@ -63,8 +64,9 @@
          (while (lt paid amount)
            (~>
             cost-types
-            (filter (λ (gt (get-prop shelter _) 0)))
-            (map create-req)
+            (filter-map
+             (λ (gt (get-prop shelter _) 0))
+             (create-req))
             (flow-from-triple
              player-state.clientid
              (add "pay the cost (" paid "/" amount ")")))
@@ -83,21 +85,22 @@
      (while (lt paid amount)
        (~>
         (expand-cost-type cost-type)
-        (filter (λ (gt (get-prop shelter _) 0)))
-        (map create-req)
+        (filter-map
+         (λ (gt (get-prop shelter _) 0))
+         create-req))       
         (flow-from-triple
          player-state.clientid
          (add "pay the cost (" paid "/" amount ")")))
        (flow-end)
-       (++ paid))))
+       (++ paid)))
 
  (def-λ (shelter-has-enough-specific shelter cost-types amount)
    (dbgl "in shelter-has-enough-speicifc" amount)
    (def counts (create-obj))
    (for (c cost-types)
      (unless (contains counts c)
-       (set-prop counts c 0))
-     (prop+= counts c 1))
+       (counts.c <- 0))
+     (counts.c += 1))
    (def total
      (fold (keys counts) 0
            (λ (acc c)
@@ -127,27 +130,24 @@
  
  (def-λ (get-building-actions player-state cost-modifier)
    (dbgl "in get building actions")
-   (def shelter player-state.shelter)
    (~>
-    shelter.stuff
-    (filter (λ (and (_.type = "room") (_.state = "unbuilt"))))
+   player-state.shelter.stuff 
+   (filter (λ (and (_.type = "room") (_.state = "unbuilt"))))
     (filter (λ (shelter-has-enough
-                shelter "materials" (cost-modifier _))))))
+                player-state.shelter "materials" (cost-modifier _))))))
 
  (def-λ (get-fixing-actions player-state cost-modifier)
    (dbgl "in get fixing actions")
-   (def shelter player-state.shelter)
    (~>
-    shelter.stuff
+    player-state.shelter.stuff
     (filter (λ (and (_.type = "equipment") (_.state = "broken"))))
     (filter (λ (shelter-has-enough-specific
-                shelter _.cost (cost-modifier _))))))
+                player-state.shelter _.cost (cost-modifier _))))))
 
  (def-λ (get-stuff-activations player-state)
    (dbgl "in get stuff activations")
-   (def shelter player-state.shelter)
    (~>
-    shelter.stuff
+    player-state.shelter.stuff
     (filter (λ (return (_.avail? _ player-state))))))
 
  (def-λ (try-get-from-resources type amount)
@@ -302,16 +302,14 @@
      ;and not just a loop
      (p.phase <- phase-day-2)
      (for (h p.heroes)      
-      (dbgl "\tprocessing hero " h.strength " at location " h.location)))
-   )
+      (dbgl "\tprocessing hero " h.strength " at location " h.location))))
  
  (def-λ (process-night)
    ;event resolution, feeding, radioactivity, building, fixing
    ; todo: this can be done concurrently for each player   
    (dbgl "process-night")
    (for (p players)
-     (def shelter p.shelter)
-     (dbg-obj shelter)
+     (dbg-obj p.shelter)
      (p.phase <- phase-night-1)
      ; collect any available actions from rooms and equipment
      ; that apply to this phase
@@ -381,7 +379,7 @@
           ]
          [phase-night-7
           (dbgl "\t\tshelter upkeep")
-          (for (s shelter.stuff) (s.used <- #f))
+          (for (s p.shelter.stuff) (s.used <- #f))
           (for (h p.heroes) (h.moved <- #f))
           (p.phase <- phase-day-2)]))))
 
