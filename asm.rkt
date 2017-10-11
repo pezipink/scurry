@@ -36,6 +36,7 @@
   s-while
   s-and
   s-cond
+  s-not
 ;  s-shuffle
   ))
 
@@ -54,6 +55,7 @@
   [s-if if]
   [s-list list]
   [s-return return]
+  [s-not not]
   [s-begin begin]
   [s-while while]
   [s-and and]
@@ -211,65 +213,70 @@
         [(list 'bgt x)    (flatten (list 43 (get-int-bytes(check-string x))))]
         [(list 'blt x)    (flatten (list 44 (get-int-bytes(check-string x))))]
         [(list 'branch x)    (flatten (list 45 (get-int-bytes(check-string x))))]
-        [(list 'createobj) 46]
-        [(list 'cloneobj) 47]
-        [(list 'getobj) 48]
-        [(list 'getobjs) 49]
-        [(list 'delprop) 50]
-        [(list 'p_delprop) 51]
-        [(list 'delobj) 52]
-        [(list 'moveobj) 53]
-        [(list 'p_moveobj) 54]
-        [(list 'createlist) 55]
-        [(list 'appendlist) 56]
-        [(list 'p_appendlist) 57]
-        [(list 'prependlist) 58]
-        [(list 'p_prependlist) 59]
-        [(list 'removelist) 60]
-        [(list 'p_removelist) 61]
-        [(list 'len) 62]
-        [(list 'p_len) 63]
-        [(list 'index) 64]
-        [(list 'p_index) 65]
-        [(list 'keys) 66]
-        [(list 'values) 67]
-        [(list 'syncprop) 68]
-        [(list 'getloc) 69]
-        [(list 'genloc) 70]
-        [(list 'genlocref) 71]
-        [(list 'setlocsibling) 72]
-        [(list 'p_setlocsibling) 73]
-        [(list 'setlocchild) 74]
-        [(list 'p_setlocchild) 75]
-        [(list 'setlocparent) 76]
-        [(list 'p_setlocparent) 77]
-        [(list 'getlocsiblings) 78]
-        [(list 'p_getlocsiblings) 79]
-        [(list 'getlocchildren) 80]
-        [(list 'p_getlocchildren) 81]
-        [(list 'getlocparent) 82]
-        [(list 'p_getlocparent) 83]
-        [(list 'setvis) 84]
-        [(list 'p_setvis) 85]
-        [(list 'adduni) 86]
-        [(list 'deluni) 87]
-        [(list 'splitat) 88]
-        [(list 'shuffle) 89]
-        [(list 'sort) 90]
-        [(list 'sortby) 91]
-        [(list 'genreq) 92]
-        [(list 'addaction) 93]
-        [(list 'p_addaction) 94]
-        [(list 'suspend) 95]
-        [(list 'cut) 96]
-        [(list 'say) 97]
-        [(list 'pushscope) 98]
-        [(list 'popscope) 99]
-        [(list 'lambda x)    (flatten (list 100 (get-int-bytes(check-string x))))]
-        [(list 'apply) 101]
-        [(list 'ret) 102]
-        [(list 'dbg) 103]
-        [(list 'dbgl) 104]
+        [(list 'isobj) 46]
+        [(list 'isint) 47]
+        [(list 'isbool) 48]
+        [(list 'isloc) 49]
+        [(list 'islist) 50]
+        [(list 'createobj) 51]
+        [(list 'cloneobj) 52]
+        [(list 'getobj) 53]
+        [(list 'getobjs) 54]
+        [(list 'delprop) 55]
+        [(list 'p_delprop) 56]
+        [(list 'delobj) 57]
+        [(list 'moveobj) 58]
+        [(list 'p_moveobj) 59]
+        [(list 'createlist) 60]
+        [(list 'appendlist) 61]
+        [(list 'p_appendlist) 62]
+        [(list 'prependlist) 63]
+        [(list 'p_prependlist) 64]
+        [(list 'removelist) 65]
+        [(list 'p_removelist) 66]
+        [(list 'len) 67]
+        [(list 'p_len) 68]
+        [(list 'index) 69]
+        [(list 'p_index) 70]
+        [(list 'keys) 71]
+        [(list 'values) 72]
+        [(list 'syncprop) 73]
+        [(list 'getloc) 74]
+        [(list 'genloc) 75]
+        [(list 'genlocref) 76]
+        [(list 'setlocsibling) 77]
+        [(list 'p_setlocsibling) 78]
+        [(list 'setlocchild) 79]
+        [(list 'p_setlocchild) 80]
+        [(list 'setlocparent) 81]
+        [(list 'p_setlocparent) 82]
+        [(list 'getlocsiblings) 83]
+        [(list 'p_getlocsiblings) 84]
+        [(list 'getlocchildren) 85]
+        [(list 'p_getlocchildren) 86]
+        [(list 'getlocparent) 87]
+        [(list 'p_getlocparent) 88]
+        [(list 'setvis) 89]
+        [(list 'p_setvis) 90]
+        [(list 'adduni) 91]
+        [(list 'deluni) 92]
+        [(list 'splitat) 93]
+        [(list 'shuffle) 94]
+        [(list 'sort) 95]
+        [(list 'sortby) 96]
+        [(list 'genreq) 97]
+        [(list 'addaction) 98]
+        [(list 'p_addaction) 99]
+        [(list 'suspend) 100]
+        [(list 'cut) 101]
+        [(list 'say) 102]
+        [(list 'pushscope) 103]
+        [(list 'popscope) 104]
+        [(list 'lambda x)    (flatten (list 105 (get-int-bytes(check-string x))))]
+        [(list 'apply) 106]
+        [(list 'ret) 107]
+        [(list 'dbg) 108]
+        [(list 'dbgl) 109]
 
                 ))))
 
@@ -377,7 +384,7 @@
   (define (add-scoped-binding stx-name stx)
     (let ([name (syntax-e stx-name)]
           [scoped (peek-scoped-stack)])
-      (when (in-scope? name)
+      (when (and (in-scope? name) (not (equal? name "global")))
         (writeln
          (format "warning: ~a is already in scope at ~a"
                  name (source-location->string stx))))
@@ -504,6 +511,20 @@
            (appendlist)) ...)
          )]))
 
+(define-syntax-parser is-list?
+  [(_ arg) #'`(,(eval-arg arg) (islist))])
+                      
+(define-syntax-parser is-location?
+  [(_ arg) #'`(,(eval-arg arg) (isloc))])
+
+(define-syntax-parser is-bool?
+  [(_ arg) #'`(,(eval-arg arg) (isbool))])
+
+(define-syntax-parser is-int?
+  [(_ arg) #'`(,(eval-arg arg) (isint))])
+
+(define-syntax-parser is-obj?
+  [(_ arg) #'`(,(eval-arg arg) (isobj))])
 
 (define-syntax (s-lambda stx)
   (syntax-parse stx
@@ -778,8 +799,6 @@
   (syntax-parse stx
     [(_ exprs ... ) #''((createlist))]))
 
-
-
 (define-syntax-parser eval-arg
 ;  (wdb "eval arg ~a" this-syntax)
   [(_ id:prop-accessor)
@@ -814,13 +833,13 @@
 
 (define-syntax-parser keys 
   [(_ expr)
-   #'`(((,(eval-arg expr)
-         (keys))))])
+   #'`(,(eval-arg expr)
+         (keys))])
 
 (define-syntax-parser vals
   [(_ expr)
-   #'`(((,(eval-arg expr)
-         (values))))])
+   #'`(,(eval-arg expr)
+         (values))])
          
 (define-syntax-parser s-list  
   [(_) #''(createlist)]
@@ -923,6 +942,7 @@
       [resp-name (string->symbol (new-var))])
      (add-scoped-binding #'flow-name this-syntax)
      (add-scoped-binding #'resp-name this-syntax)
+     
    #'`(,(def-flow flow-name title-expr)
        ((,(s-when expr.eq-expr
           (add-flow-action flow-name expr.n expr.case-title-expr))...))  
@@ -953,15 +973,15 @@
     [(_ var)
      #'`(,(eval-arg var))]))
 
-(define-syntax (call stx)
-  (syntax-parse stx
-    [(_ (func args ...))
-     (with-syntax
-       ([func (string->symbol (string-append (symbol->string (syntax-e #'func)) ":"))]
-        [(rargs ...) (datum->syntax stx (reverse (syntax->datum #'(args ...))))]
-        )
-       #'`(,(eval-arg rargs) ...
-           (call func)))]))
+;; (define-syntax (call stx)
+;;   (syntax-parse stx
+;;     [(_ (func args ...))
+;;      (with-syntax
+;;        ([func (string->symbol (string-append (symbol->string (syntax-e #'func)) ":"))]
+;;         [(rargs ...) (datum->syntax stx (reverse (syntax->datum #'(args ...))))]
+;;         )
+;;        #'`(,(eval-arg rargs) ...
+;;            (call func)))]))
 
 (define-syntax (create-location stx)
   (syntax-parse stx
@@ -1121,8 +1141,9 @@
   (syntax-parse stx
     [(_ left right ...)
      #'`(,(eval-arg left)
+
          ((,(eval-arg right)
-         (add)) ...))]))
+           (add)) ...))]))
 
 (define-syntax (sub stx)
   (syntax-parse stx
@@ -1191,8 +1212,8 @@
 
 (define-syntax (get-objs stx)
   (syntax-parse stx
-    [(_ loc )
-     #'`(,(eval-arg loc)
+    [(_ locaction )
+     #'`(,(eval-arg locaction)
          (getobjs)
          )]))
 
@@ -1300,7 +1321,7 @@
          (pop)
          (end)))]))                             
 
-(define-syntax (obj-match stx)
+(define-syntax (obj-match stx)          
   (syntax-parse stx 
     [(_ obj-expr
         ([(k v)
@@ -1345,6 +1366,12 @@
   (syntax-parse stx
     [(_ var n)  (syntax/loc stx (set-var var (add n var)))]))
 
+(define-syntax-parser prop++
+  [(_ obj key ...+ final-key)
+   #`(prop+= obj key ... final-key 1)]
+  [(_ obj key)
+   #`(prop+= obj key 1)])
+
 (define-syntax-parser prop+=
   [(_ obj key ...+ final-key n)
    #'`(,(eval-arg final-key)
@@ -1369,6 +1396,12 @@
        (add)
        (stprop)
        )])
+
+(define-syntax-parser prop--
+  [(_ obj key ...+ final-key)
+   #`(prop-= obj key ... final-key 1)]
+  [(_ obj key)
+   #`(prop-= obj key 1)])
 
 (define-syntax-parser prop-=
   [(_ obj key ...+ final-key n)
@@ -1423,14 +1456,13 @@
               (match node
                 [(list-rest '#%app (or 'list 'list*) (list 'quote 'pending-function) tail)
                  (let-values ([(a b) (folder tail null null)])
-                   ;todo: handle the nested lambdas (or does it already??)
                    (values acc (cons b (cons a funcs))))]               
-                [(list
-                  '#%app
-                  (or 'list* 'list)
-                  (list 'quote (and (or 'stvar 'p_stvar 'ldvar 'p_ldvar) op))
-                  (list 'quote x))
-                 (values (cons (list op x) acc) funcs)]
+                ;; [(list
+                ;;   '#%app
+                ;;   (or 'list* 'list)
+                ;;   (list 'quote (and (or 'stvar 'p_stvar 'ldvar 'p_ldvar) op))
+                ;;   (list 'quote x))
+                ;;  (values (cons (list op x) acc) funcs)]
                 
                 [_
                  (let-values ([(a b) (folder node null null)])
@@ -1467,21 +1499,13 @@
 
 (define-syntax-parser def-λ
   [(_ (name args ...+) body ...)   
-   #'(def name (λ (args ...)
-  ;               (dbgl "in " name)
-                 body ...
-                 ;              (dbgl "out " name)
-                 ))]
+   #'(def name (λ (args ...) body ...))]
   ; sugar a no-args lambda with _
   ; auto application calls this with #f
   ; which is ignored, so we dont have to
   ; have a speical unit() value
   [(_ (name) body ...)   
-   #'(def name (λ (_)
-;                 (dbgl "in " name)
-                 body ...
- ;                (dbgl "out " name)
-                 ))])
+   #'(def name (λ (_) body ...))])
 
 (define-syntax-parser import
   [(_ lib)  #'lib])
@@ -1567,7 +1591,7 @@
        (rvar id.name))
        ])
 
-; useful for announcing in plae changes to lists
+; useful for announcing in place changes to lists
 (define-syntax-parser sync-prop
   [(_ obj prop )
    #'`(,(eval-arg obj)
@@ -1580,25 +1604,28 @@
    #'`(,(s-cond
          [(eq test val)
           (s-begin expr ...)] ...
-          [else else-expr ... ]))]
-   
+          [else else-expr ... ]))]   
     [(_ test [val expr ...] ... )
    #'`(,(s-cond
          [(eq test val)
-          (s-begin expr ...)] ...))
-       
-   ])
+          (s-begin expr ...)] ...))])
 
 
 (define-syntax (app stx)
   (syntax-parse stx
-    #:datum-literals (<- != = += -= < <= > >= ++)
+    #:datum-literals (<- != = += -= < <= > >= ++ --)
+    [(_ f:prop-accessor ++ )
+     #'(prop+= f.ident f.prop ... 1)]
+    [(_ f:prop-accessor -- )
+     #'(prop-= f.ident f.prop ... 1)]
     [(_ f:prop-accessor += val)
      #'(prop+= f.ident f.prop ... val)]
     [(_ f:scoped-binding += val)
      #'(set-var f (add f val))]
     [(_ f:prop-accessor ++)
      #'(++ f)]
+    [(_ val ++)
+     #'(++ val)]
     [(_ f:prop-accessor -= val)
        #'(prop-= f.ident f.prop ... val)]
     [(_ f:prop-accessor = val)
@@ -1613,8 +1640,11 @@
      #'(lt f val)]
     [(_ f:prop-accessor > val)
      #'(gt f val)]
-    [(_ f:prop-accessor <= val)
+
+    [(_ f:prop-accessor <= val)     
      #'(lte f val)]
+
+
     [(_ f:prop-accessor >= val)
      #'(gte f val)]
     [(_ f:prop-accessor != val)
@@ -1622,10 +1652,11 @@
     ; process everything else as scurry function app
     [(app f a ...+)
      #'(~ f  a ...)]
+
     [(app f)
      ;since we don't support unit we just "sugar" a
-     ;call with no args with #fm sane as the def- λ
-     #'(~ f #f)]
+     ;call with no args with #f same as the def-λ
+     #'(~ f -42)]
     ))
 
 
