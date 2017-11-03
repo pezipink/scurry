@@ -35,6 +35,7 @@
   s-begin
   s-while
   s-and
+  s-or
   s-cond
   s-not
 ;  s-shuffle
@@ -59,6 +60,7 @@
   [s-begin begin]
   [s-while while]
   [s-and and]
+  [s-or or]
   [s-cond cond]
           ))         
 
@@ -158,7 +160,7 @@
       (string-suffix? (symbol->string s) ":")))
 
 (define (get-bytes input)
- ;(wdb "~a : ~a" (context-max-assembled asm) input)
+;(wdb "~a : ~a" (context-max-assembled asm) input)
   (let* ([next
           (match input
             [(list-rest (? is-label? (app symbol->string lab) ) xs)
@@ -212,71 +214,73 @@
         [(list 'bne x)    (flatten (list 42 (get-int-bytes(check-string x))))]
         [(list 'bgt x)    (flatten (list 43 (get-int-bytes(check-string x))))]
         [(list 'blt x)    (flatten (list 44 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 45 (get-int-bytes(check-string x))))]
-        [(list 'isobj) 46]
-        [(list 'isint) 47]
-        [(list 'isbool) 48]
-        [(list 'isloc) 49]
-        [(list 'islist) 50]
-        [(list 'createobj) 51]
-        [(list 'cloneobj) 52]
-        [(list 'getobj) 53]
-        [(list 'getobjs) 54]
-        [(list 'delprop) 55]
-        [(list 'p_delprop) 56]
-        [(list 'delobj) 57]
-        [(list 'moveobj) 58]
-        [(list 'p_moveobj) 59]
-        [(list 'createlist) 60]
-        [(list 'appendlist) 61]
-        [(list 'p_appendlist) 62]
-        [(list 'prependlist) 63]
-        [(list 'p_prependlist) 64]
-        [(list 'removelist) 65]
-        [(list 'p_removelist) 66]
-        [(list 'len) 67]
-        [(list 'p_len) 68]
-        [(list 'index) 69]
-        [(list 'p_index) 70]
-        [(list 'keys) 71]
-        [(list 'values) 72]
-        [(list 'syncprop) 73]
-        [(list 'getloc) 74]
-        [(list 'genloc) 75]
-        [(list 'genlocref) 76]
-        [(list 'setlocsibling) 77]
-        [(list 'p_setlocsibling) 78]
-        [(list 'setlocchild) 79]
-        [(list 'p_setlocchild) 80]
-        [(list 'setlocparent) 81]
-        [(list 'p_setlocparent) 82]
-        [(list 'getlocsiblings) 83]
-        [(list 'p_getlocsiblings) 84]
-        [(list 'getlocchildren) 85]
-        [(list 'p_getlocchildren) 86]
-        [(list 'getlocparent) 87]
-        [(list 'p_getlocparent) 88]
-        [(list 'setvis) 89]
-        [(list 'p_setvis) 90]
-        [(list 'adduni) 91]
-        [(list 'deluni) 92]
-        [(list 'splitat) 93]
-        [(list 'shuffle) 94]
-        [(list 'sort) 95]
-        [(list 'sortby) 96]
-        [(list 'genreq) 97]
-        [(list 'addaction) 98]
-        [(list 'p_addaction) 99]
-        [(list 'suspend) 100]
-        [(list 'cut) 101]
-        [(list 'say) 102]
-        [(list 'pushscope) 103]
-        [(list 'popscope) 104]
-        [(list 'lambda x)    (flatten (list 105 (get-int-bytes(check-string x))))]
-        [(list 'apply) 106]
-        [(list 'ret) 107]
-        [(list 'dbg) 108]
-        [(list 'dbgl) 109]
+        [(list 'bt x)    (flatten (list 45 (get-int-bytes(check-string x))))]
+        [(list 'bf x)    (flatten (list 46 (get-int-bytes(check-string x))))]
+        [(list 'branch x)    (flatten (list 47 (get-int-bytes(check-string x))))]
+        [(list 'isobj) 48]
+        [(list 'isint) 49]
+        [(list 'isbool) 50]
+        [(list 'isloc) 51]
+        [(list 'islist) 52]
+        [(list 'createobj) 53]
+        [(list 'cloneobj) 54]
+        [(list 'getobj) 55]
+        [(list 'getobjs) 56]
+        [(list 'delprop) 57]
+        [(list 'p_delprop) 58]
+        [(list 'delobj) 59]
+        [(list 'moveobj) 60]
+        [(list 'p_moveobj) 61]
+        [(list 'createlist) 62]
+        [(list 'appendlist) 63]
+        [(list 'p_appendlist) 64]
+        [(list 'prependlist) 65]
+        [(list 'p_prependlist) 66]
+        [(list 'removelist) 67]
+        [(list 'p_removelist) 68]
+        [(list 'len) 69]
+        [(list 'p_len) 70]
+        [(list 'index) 71]
+        [(list 'p_index) 72]
+        [(list 'keys) 73]
+        [(list 'values) 74]
+        [(list 'syncprop) 75]
+        [(list 'getloc) 76]
+        [(list 'genloc) 77]
+        [(list 'genlocref) 78]
+        [(list 'setlocsibling) 79]
+        [(list 'p_setlocsibling) 80]
+        [(list 'setlocchild) 81]
+        [(list 'p_setlocchild) 82]
+        [(list 'setlocparent) 83]
+        [(list 'p_setlocparent) 84]
+        [(list 'getlocsiblings) 85]
+        [(list 'p_getlocsiblings) 86]
+        [(list 'getlocchildren) 87]
+        [(list 'p_getlocchildren) 88]
+        [(list 'getlocparent) 89]
+        [(list 'p_getlocparent) 90]
+        [(list 'setvis) 91]
+        [(list 'p_setvis) 92]
+        [(list 'adduni) 93]
+        [(list 'deluni) 94]
+        [(list 'splitat) 95]
+        [(list 'shuffle) 96]
+        [(list 'sort) 97]
+        [(list 'sortby) 98]
+        [(list 'genreq) 99]
+        [(list 'addaction) 100]
+        [(list 'p_addaction) 101]
+        [(list 'suspend) 102]
+        [(list 'cut) 103]
+        [(list 'say) 104]
+        [(list 'pushscope) 105]
+        [(list 'popscope) 106]
+        [(list 'lambda x)    (flatten (list 107 (get-int-bytes(check-string x))))]
+        [(list 'apply) 108]
+        [(list 'ret) 109]
+        [(list 'dbg) 110]
+        [(list 'dbgl) 111]
 
                 ))))
 
@@ -349,13 +353,12 @@
 
 
 (begin-for-syntax
-
    (define const-strings-set (make-hash))
    (define (add-const-string syn syn2)
      (define key (syntax-e syn))
      (define val (syntax-e syn2))
      (hash-set! const-strings-set key val))
-   (define (is-const? str)     
+   (define (is-const? str)
      (hash-has-key? const-strings-set str))
    )
   
@@ -409,9 +412,10 @@
   (define-syntax-class const-value
     #:opaque
     (pattern x:id
-             #:with name  (symbol->string (syntax-e #'x))
-             #:when (is-const? (symbol->string (syntax-e #'x)))
-             #:with value (hash-ref const-strings-set (symbol->string (syntax-e #'x)))
+             #:do [(define sym (symbol->string (syntax-e #'x)))]
+             #:with name sym
+             #:when (is-const? sym)
+             #:with value sym
              ))
 
   (define-syntax-class scoped-binding
@@ -420,39 +424,15 @@
     (pattern x:id
              #:with name  (symbol->string (syntax-e #'x))
              #:when (in-scope? (symbol->string (syntax-e #'x)))
-             )))
+             ))
 
-(begin-for-syntax
   (define-syntax-class binding
     #:description "identifier name"
     #:opaque
     (pattern x:id
              #:with name (symbol->string (syntax-e #'x))
-             )))
+             ))
 
-(begin-for-syntax
-    
-    ;; (define-syntax-class prop-accessor
-    ;; #:description "property accessor"
-    ;; (pattern x:id
-    ;;          #:do   [(define sym (syntax-e #'x))
-    ;;                  (define sym-str (symbol->string sym))]
-    ;;          #:when (string-contains? sym-str ".")
-    ;;          #:do   [(define split (string-split sym-str "."))
-    ;;                  (define head (car split))
-    ;;                  (define head-sym (string->symbol head))
-    ;;                  (define rest (string-join (cdr split) "."))
-    ;;                  (define prop
-    ;;                    (if (string-contains? rest ".")
-    ;;                        (string->symbol rest)
-    ;;                        rest))] 
-    ;;          #:when (in-scope? head)
-    ;;          #:with ident head-sym
-    ;;          #:with prop prop
-  ;;          ))
-  ;; (define-splicing-syntax-class prop-accessors
-  ;;   [pattern {~seq [eq-expr case-title-expr true-expr] ...}
-             ;; #:with [n ...] (map ~a (range (length (attribute eq-expr))))])
   (define-syntax-class prop-accessor
     #:description "property accessor"
     (pattern x:id
@@ -461,15 +441,27 @@
              #:when (string-contains? sym-str ".")
              #:do   [(define split (string-split sym-str "."))
                      (define head (car split))
-                     (define head-sym (string->symbol head))
-                     (define prop (cadr split))]
+                     (define head-sym (string->symbol head))]
              #:when (in-scope? head)
              #:with ident head-sym
-             #:with [prop ...] (cdr split)
-             
+             #:with [prop ...] (cdr split)             
+             ))
+  (define-syntax-class prop-exists-accessor
+    #:description "property exists accessor"
+    (pattern x:id
+             #:do   [(define sym (syntax-e #'x))
+                     (define sym-str (symbol->string sym))]
+             #:when (string-contains? sym-str ".")
+             #:do   [(define split (string-split sym-str "?."))
+                     (define head (car split))
+                     (define head-sym (string->symbol head))]
+             #:when (in-scope? head)
+             #:with ident head-sym
+             #:with [prop ...] (cdr split)             
              )))
 
 
+      
 (define-syntax-parser def-const-string
   [(_ id:binding)
    (add-const-string #'id.name #'id.name)
@@ -577,11 +569,22 @@
      
 (define-syntax (s-for stx)
   (syntax-parse stx
-    [(_ (var:binding list-expr) exprs ...)
+    [(_ (var:binding (~optional ind:binding #:defaults ([ind #'#f]))  list-expr)
+        (~optional (~seq #:break break-expr) #:defaults ([break-expr #'#f]))
+        exprs ...)
      (with-syntax*
        ([label (new-label)]
         [continue (new-label)]
-        [idx (new-var)]
+        [idx (if (syntax-e #'ind)
+                 
+                 #'ind.name
+                 (new-var))]
+        [break (if (syntax-e #'break-expr)
+                   #'`(,(eval-arg break-expr)
+                       (ldvalb #t)
+                       (beq continue))
+                   #'`())]
+                            
         [start
          #'`(
              ,(eval-arg list-expr)
@@ -608,7 +611,10 @@
              )])
        (push-scoped-stack)
        (add-scoped-binding #'var.name stx)
-       #'(start exprs ... end))]))
+       (when (syntax-e #'ind)
+         (add-scoped-binding #'ind.name stx))
+       #'(start break exprs ... end))]))
+
 
 
 (define-syntax-parser pop-scoped-stack
@@ -660,7 +666,24 @@
              (pop)
              )])
        #'(start  exprs ... end))]))
-     
+
+
+(define-syntax (try-get-prop stx)
+  (syntax-parse stx
+    [(_ obj key ...)
+     (with-syntax [(fail (new-label))
+                   (end (new-label))]
+       #'`(,(eval-arg obj)
+           (,(eval-arg key)
+            (p_contains)
+            (bf fail)
+            ,(eval-arg key)
+            (ldprop)) ...
+           (branch end)
+           (fail pop)
+           (ldvalb #f)
+           (end)))]))
+
 (define-syntax (get-prop stx)
   (syntax-parse stx
     [(_ obj key ...)
@@ -802,12 +825,16 @@
 (define-syntax-parser eval-arg
 ;  (wdb "eval arg ~a" this-syntax)
   [(_ id:prop-accessor)
-   #'(get-prop id.ident id.prop ...)]  
+   #'(get-prop id.ident id.prop ...)]
+  [(_ id:prop-exists-accessor)
+   #'(try-get-prop id.ident id.prop ...)]
   [(_ id:scoped-binding)   
      ; if this is an identifier then it will be a string table lookup
      ; to a variable       
    (syntax/loc this-syntax '((ldvar id.name)))]
   [(_ id:const-value)
+   ; compile time constant strings also are string table lookups
+   
    #'`((ldvals id.value))]
   [(_ expr:str)     
    #''((ldvals expr))]
@@ -941,15 +968,27 @@
      ([flow-name (string->symbol (new-var))]
       [resp-name (string->symbol (new-var))])
      (add-scoped-binding #'flow-name this-syntax)
-     (add-scoped-binding #'resp-name this-syntax)
-     
-   #'`(,(def-flow flow-name title-expr)
+     (add-scoped-binding #'resp-name this-syntax)     
+     #'`(,(def-flow flow-name title-expr)
        ((,(s-when expr.eq-expr
           (add-flow-action flow-name expr.n expr.case-title-expr))...))  
        ,(def resp-name (flow flow-name client))
        ,(s-cond
           [(eq resp-name expr.n) expr.true-expr] ...)
        ))]
+  [(_ client title-expr ([key choice ] ...))
+      (with-syntax
+        ([flow-name (string->symbol (new-var))]
+         [resp-name (string->symbol (new-var))])
+        (add-scoped-binding #'flow-name this-syntax)
+        (add-scoped-binding #'resp-name this-syntax)
+        
+        #'`(,(def-flow flow-name title-expr)
+            (,(add-flow-action flow-name key choice) ...)
+            ,(flow flow-name client))
+
+        )]
+
   [(_ req client)
    #'`(,(eval-arg req)
        ,(eval-arg client)
@@ -1085,13 +1124,15 @@
     [(_ cond-expr body-expr ... )
      (with-syntax ([start (new-label)]
                    [end (new-label)])
-       #'`(((start)
+       #'`(((pushscope)
+            (start)
             ,(eval-arg cond-expr)
             (ldvalb 0)
             (beq end)
             ,(eval-arg body-expr) ...
             (branch start)
-            (end))))]))
+            (end)
+            (popscope))))]))
 
 (define-syntax (eq stx)
   (syntax-parse stx
@@ -1613,7 +1654,8 @@
 
 (define-syntax (app stx)
   (syntax-parse stx
-    #:datum-literals (<- != = += -= < <= > >= ++ --)
+    #:datum-literals (<- != = += -= < <= > >= ++ -- in)
+
     [(_ f:prop-accessor ++ )
      #'(prop+= f.ident f.prop ... 1)]
     [(_ f:prop-accessor -- )
@@ -1622,41 +1664,35 @@
      #'(prop+= f.ident f.prop ... val)]
     [(_ f:scoped-binding += val)
      #'(set-var f (add f val))]
-    [(_ f:prop-accessor ++)
-     #'(++ f)]
-    [(_ val ++)
-     #'(++ val)]
     [(_ f:prop-accessor -= val)
        #'(prop-= f.ident f.prop ... val)]
     [(_ f:prop-accessor = val)
      #'(eq (get-prop f.ident f.prop ...) val)]
-    [(_ f = val)
-     #'(eq f val)]    
     [(_ f:prop-accessor <- val)
      #'(set-prop f.ident f.prop ... val)]
     [(_ f:scoped-binding <- val)
      #'(set-var f val)]    
-    [(_ f:prop-accessor < val)
+    [(_ (~or f:prop-accessor f:scoped-binding) < val)
      #'(lt f val)]
-    [(_ f:prop-accessor > val)
+    [(_ (~or f:prop-accessor f:scoped-binding) > val)
      #'(gt f val)]
-
-    [(_ f:prop-accessor <= val)     
+    [(_ (~or f:prop-accessor f:scoped-binding) <= val)     
      #'(lte f val)]
-
-
-    [(_ f:prop-accessor >= val)
+    [(_ (~or f:prop-accessor f:scoped-binding) >= val)
      #'(gte f val)]
-    [(_ f:prop-accessor != val)
+    [(_ (~or f:prop-accessor f:scoped-binding) != val)
      #'(ne f val) ]
+    [(_ val ++)
+     #'(++ val)]
+    [(_ f = val)
+     #'(eq f val)]    
     ; process everything else as scurry function app
     [(app f a ...+)
      #'(~ f  a ...)]
-
     [(app f)
      ;since we don't support unit we just "sugar" a
      ;call with no args with #f same as the def-λ
-     #'(~ f -42)]
+     #'(~ f #f)]
     ))
 
 

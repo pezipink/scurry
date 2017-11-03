@@ -1,3 +1,4 @@
+
 #lang racket
 
 (require "asm.rkt")
@@ -12,21 +13,21 @@
 
  (def-λ (expand-cost-type cost-type)   
    (case cost-type
-     [resources (list  wood metal microchips ammo)]
+     [resources (list wood metal microchips ammo)]
      [materials (list wood metal microchips)]
      [supplies  (list meat water canned-goods)]
      [else (list cost-type)]))
       
  (def-λ (pay-survivors player-state amount)
-   (def shelter player-state.shelter)
    ; survivors can be taken from rooms with workers or the airlock
    (def paid 0)
    (while (lt paid amount)
      (def rooms
        (~>
-        (list player-state.airlock)
+        (list player-state.shelter.airlock)
         (append-many (filter player-state.stuff (λ (_.type = "room"))))
         (filter (λ (_.workers > 0)))))
+
      (if (eq (list-len rooms) 0)
          (begin
            (dbgl "no more survivors!")
@@ -43,7 +44,7 @@
             (flow-from-triple
              player-state.clientid
              "Sacrifice a survivor"))))
-     (++ paid)))          
+     (paid ++)))          
 
  (def-λ (pay-cost-specific player-state cost-types amount)
    ; if the cost types length is the same as the amount, we can just take
@@ -71,7 +72,7 @@
              player-state.clientid
              (add "pay the cost (" paid "/" amount ")")))
            (flow-end)
-           (++ paid)))))
+           (paid ++)))))
         
  (def-λ (pay-cost player-state cost-type amount)
    (let
@@ -82,7 +83,7 @@
          (tuple type
            (add "pay 1 " type "(" (get-prop shelter type) " remaining)")
            (λ (prop-= shelter type 1))))])
-     (while (lt paid amount)
+     (while (lte paid amount)
        (~>
         (expand-cost-type cost-type)
         (filter-map
@@ -92,7 +93,7 @@
          player-state.clientid
          (add "pay the cost (" paid "/" amount ")")))
        (flow-end)
-       (++ paid)))
+       (paid ++)))
 
  (def-λ (shelter-has-enough-specific shelter cost-types amount)
    (dbgl "in shelter-has-enough-speicifc" amount)

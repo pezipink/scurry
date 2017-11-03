@@ -77,13 +77,13 @@
      (def n (min 3 (list-len souvenirs)))            
      (def avail (split-top n souvenirs))
      ;move all three to the player area
-     (foreach (s avail) (move-obj s clientid))
+     (for (s avail) (move-obj s clientid))
      ;there is a problem here - we always end up with all the
      ;list data instead of the stuff that wasn't bought.
      (aux avail)
 
      ; remove the remaining cards from the clients
-     (foreach (s avail) (remove-uni s))
+     (for (s avail) (remove-uni s))
      (prepend-many avail souvenirs)
      'brk
      (dbgl "sovs after : " souvenirs)
@@ -213,7 +213,7 @@
 
  
  (def i 0)
- (foreach (p players)
+ (for (p players)
    (if (eq i 0)
     (begin
      (set-prop p "role" "Hirotada")
@@ -240,7 +240,7 @@
    ;;          (~ f p spring))
    ;; (dbgl "player has " (get-prop p "hot-springs"))          
 
- (foreach (f (get-global "on-enter"))          
+ (for (f (get-global "on-enter"))          
              (f p village)))
  (dbgl "the end")
  'brk

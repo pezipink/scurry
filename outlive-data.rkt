@@ -126,7 +126,7 @@
        ; stuff and places
        ammo wood metal microchips meat water canned-goods materials resources supplies
        blackwood mine forest silent-peak cargo-ship fair military-base blackwood-tile dam
-       silent-peak-tile survivors
+       silent-peak-tile survivors airlock shelter stuff type  name
 
        ; equipment
        shotgun jerrycan backpack pickaxe thermal-sensor baseball-bat ammunitions-kit
@@ -136,7 +136,6 @@
        seaweed-pills empty-cupboard
 
        ;phases
-
        phase-dawn 
        phase-day  
        phase-night
@@ -184,10 +183,11 @@
       (def-λ (create-airlock)
         ; the airlock is special and is never "activated"
         ; and its supply cost is calcuated elsewhere
-        (create-room "airlock" "the airlock" 0 0 7
+        (create-room airlock "the airlock" 0 0 7
                        (λ (this state) (return #f))
                        (λ (this state) (dbgl "!"))))
-      
+
+
       (def-λ (create-starting-rooms)
         (list
           (create-room
@@ -381,7 +381,6 @@
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
          
-
          ))
                 
 ))
