@@ -17,7 +17,7 @@
 (require threading)
 (require (for-syntax threading))
 
-;(provide (except-out (all-from-out racket) #%app sort when if)
+;(provide (except-ut (all-from-out racket) #%app sort when if)
 ;(rename-out [app #%app])
 
 (provide
@@ -38,6 +38,8 @@
   s-or
   s-cond
   s-not
+  s-cons
+  
 ;  s-shuffle
   ))
 
@@ -62,6 +64,7 @@
   [s-and and]
   [s-or or]
   [s-cond cond]
+  [s-cons cons]
           ))         
 
 
@@ -172,116 +175,128 @@
         [(list 'brk) 0]
         [(list 'pop) 1]
         [(list 'swap) 2]
-        [(list 'swapn x)    (flatten (list 3 (get-int-bytes(check-string x))))]
-        [(list 'dup) 4]
-        [(list 'ldval x)    (flatten (list 5 (get-int-bytes(check-string x))))]
-        [(list 'ldvals x)    (flatten (list 6 (get-int-bytes(check-string x))))]
-        [(list 'ldvalb x)    (flatten (list 7 (get-int-bytes(check-string x))))]
-        [(list 'ldvar x)    (flatten (list 8 (get-int-bytes(check-string x))))]
-        [(list 'stvar x)    (flatten (list 9 (get-int-bytes(check-string x))))]
-        [(list 'p_stvar x)    (flatten (list 10 (get-int-bytes(check-string x))))]
-        [(list 'rvar x)    (flatten (list 11 (get-int-bytes(check-string x))))]
-        [(list 'ldprop) 12]
-        [(list 'p_ldprop) 13]
-        [(list 'stprop) 14]
-        [(list 'p_stprop) 15]
-        [(list 'inc) 16]
-        [(list 'dec) 17]
-        [(list 'neg) 18]
-        [(list 'add) 19]
-        [(list 'sub) 20]
-        [(list 'mul) 21]
-        [(list 'div) 22]
-        [(list 'mod) 23]
-        [(list 'rndi) 24]
-        [(list 'startswith) 25]
-        [(list 'p_startswith) 26]
-        [(list 'endswith) 27]
-        [(list 'p_endswith) 28]
-        [(list 'contains) 29]
-        [(list 'p_contains) 30]
-        [(list 'indexof) 31]
-        [(list 'p_indexof) 32]
-        [(list 'substring) 33]
-        [(list 'p_substring) 34]
-        [(list 'ceq) 35]
-        [(list 'cne) 36]
-        [(list 'cgt) 37]
-        [(list 'cgte) 38]
-        [(list 'clt) 39]
-        [(list 'clte) 40]
-        [(list 'beq x)    (flatten (list 41 (get-int-bytes(check-string x))))]
-        [(list 'bne x)    (flatten (list 42 (get-int-bytes(check-string x))))]
-        [(list 'bgt x)    (flatten (list 43 (get-int-bytes(check-string x))))]
-        [(list 'blt x)    (flatten (list 44 (get-int-bytes(check-string x))))]
-        [(list 'bt x)    (flatten (list 45 (get-int-bytes(check-string x))))]
-        [(list 'bf x)    (flatten (list 46 (get-int-bytes(check-string x))))]
-        [(list 'branch x)    (flatten (list 47 (get-int-bytes(check-string x))))]
-        [(list 'isobj) 48]
-        [(list 'isint) 49]
-        [(list 'isbool) 50]
-        [(list 'isloc) 51]
-        [(list 'islist) 52]
-        [(list 'createobj) 53]
-        [(list 'cloneobj) 54]
-        [(list 'getobj) 55]
-        [(list 'getobjs) 56]
-        [(list 'delprop) 57]
-        [(list 'p_delprop) 58]
-        [(list 'delobj) 59]
-        [(list 'moveobj) 60]
-        [(list 'p_moveobj) 61]
-        [(list 'createlist) 62]
-        [(list 'appendlist) 63]
-        [(list 'p_appendlist) 64]
-        [(list 'prependlist) 65]
-        [(list 'p_prependlist) 66]
-        [(list 'removelist) 67]
-        [(list 'p_removelist) 68]
-        [(list 'len) 69]
-        [(list 'p_len) 70]
-        [(list 'index) 71]
-        [(list 'p_index) 72]
-        [(list 'keys) 73]
-        [(list 'values) 74]
-        [(list 'syncprop) 75]
-        [(list 'getloc) 76]
-        [(list 'genloc) 77]
-        [(list 'genlocref) 78]
-        [(list 'setlocsibling) 79]
-        [(list 'p_setlocsibling) 80]
-        [(list 'setlocchild) 81]
-        [(list 'p_setlocchild) 82]
-        [(list 'setlocparent) 83]
-        [(list 'p_setlocparent) 84]
-        [(list 'getlocsiblings) 85]
-        [(list 'p_getlocsiblings) 86]
-        [(list 'getlocchildren) 87]
-        [(list 'p_getlocchildren) 88]
-        [(list 'getlocparent) 89]
-        [(list 'p_getlocparent) 90]
-        [(list 'setvis) 91]
-        [(list 'p_setvis) 92]
-        [(list 'adduni) 93]
-        [(list 'deluni) 94]
-        [(list 'splitat) 95]
-        [(list 'shuffle) 96]
-        [(list 'sort) 97]
-        [(list 'sortby) 98]
-        [(list 'genreq) 99]
-        [(list 'addaction) 100]
-        [(list 'p_addaction) 101]
-        [(list 'suspend) 102]
-        [(list 'cut) 103]
-        [(list 'say) 104]
-        [(list 'pushscope) 105]
-        [(list 'popscope) 106]
-        [(list 'lambda x)    (flatten (list 107 (get-int-bytes(check-string x))))]
-        [(list 'apply) 108]
-        [(list 'ret) 109]
-        [(list 'dbg) 110]
-        [(list 'dbgl) 111]
-
+[(list 'swapn x)    (flatten (list 3 (get-int-bytes(check-string x))))]
+[(list 'dup) 4]
+[(list 'ldval x)    (flatten (list 5 (get-int-bytes(check-string x))))]
+[(list 'ldvals x)    (flatten (list 6 (get-int-bytes(check-string x))))]
+[(list 'ldvalb x)    (flatten (list 7 (get-int-bytes(check-string x))))]
+[(list 'ldvar x)    (flatten (list 8 (get-int-bytes(check-string x))))]
+[(list 'stvar x)    (flatten (list 9 (get-int-bytes(check-string x))))]
+[(list 'p_stvar x)    (flatten (list 10 (get-int-bytes(check-string x))))]
+[(list 'rvar x)    (flatten (list 11 (get-int-bytes(check-string x))))]
+[(list 'ldprop) 12]
+[(list 'p_ldprop) 13]
+[(list 'stprop) 14]
+[(list 'p_stprop) 15]
+[(list 'inc) 16]
+[(list 'dec) 17]
+[(list 'neg) 18]
+[(list 'add) 19]
+[(list 'sub) 20]
+[(list 'mul) 21]
+[(list 'div) 22]
+[(list 'mod) 23]
+[(list 'pow) 24]
+[(list 'tostr) 25]
+[(list 'toint) 26]
+[(list 'rndi) 27]
+[(list 'startswith) 28]
+[(list 'p_startswith) 29]
+[(list 'endswith) 30]
+[(list 'p_endswith) 31]
+[(list 'contains) 32]
+[(list 'p_contains) 33]
+[(list 'indexof) 34]
+[(list 'p_indexof) 35]
+[(list 'substring) 36]
+[(list 'p_substring) 37]
+[(list 'ceq) 38]
+[(list 'cne) 39]
+[(list 'cgt) 40]
+[(list 'cgte) 41]
+[(list 'clt) 42]
+[(list 'clte) 43]
+[(list 'beq x)    (flatten (list 44 (get-int-bytes(check-string x))))]
+[(list 'bne x)    (flatten (list 45 (get-int-bytes(check-string x))))]
+[(list 'bgt x)    (flatten (list 46 (get-int-bytes(check-string x))))]
+[(list 'blt x)    (flatten (list 47 (get-int-bytes(check-string x))))]
+[(list 'bt x)    (flatten (list 48 (get-int-bytes(check-string x))))]
+[(list 'bf x)    (flatten (list 49 (get-int-bytes(check-string x))))]
+[(list 'branch x)    (flatten (list 50 (get-int-bytes(check-string x))))]
+[(list 'isobj) 51]
+[(list 'isint) 52]
+[(list 'isbool) 53]
+[(list 'isloc) 54]
+[(list 'isarray) 55]
+[(list 'createobj) 56]
+[(list 'cloneobj) 57]
+[(list 'getobj) 58]
+[(list 'getobjs) 59]
+[(list 'delprop) 60]
+[(list 'p_delprop) 61]
+[(list 'delobj) 62]
+[(list 'moveobj) 63]
+[(list 'p_moveobj) 64]
+[(list 'createarr) 65]
+[(list 'appendarr) 66]
+[(list 'p_appendarr) 67]
+[(list 'prependarr) 68]
+[(list 'p_prependarr) 69]
+[(list 'removearr) 70]
+[(list 'p_removearr) 71]
+[(list 'len) 72]
+[(list 'p_len) 73]
+[(list 'index) 74]
+[(list 'p_index) 75]
+[(list 'setindex) 76]
+[(list 'keys) 77]
+[(list 'values) 78]
+[(list 'syncprop) 79]
+[(list 'getloc) 80]
+[(list 'genloc) 81]
+[(list 'genlocref) 82]
+[(list 'setlocsibling) 83]
+[(list 'p_setlocsibling) 84]
+[(list 'setlocchild) 85]
+[(list 'p_setlocchild) 86]
+[(list 'setlocparent) 87]
+[(list 'p_setlocparent) 88]
+[(list 'getlocsiblings) 89]
+[(list 'p_getlocsiblings) 90]
+[(list 'getlocchildren) 91]
+[(list 'p_getlocchildren) 92]
+[(list 'getlocparent) 93]
+[(list 'p_getlocparent) 94]
+[(list 'setvis) 95]
+[(list 'p_setvis) 96]
+[(list 'adduni) 97]
+[(list 'deluni) 98]
+[(list 'splitat) 99]
+[(list 'shuffle) 100]
+[(list 'sort) 101]
+[(list 'sortby) 102]
+[(list 'genreq) 103]
+[(list 'addaction) 104]
+[(list 'p_addaction) 105]
+[(list 'suspend) 106]
+[(list 'cut) 107]
+[(list 'say) 108]
+[(list 'pushscope) 109]
+[(list 'popscope) 110]
+[(list 'lambda x)    (flatten (list 111 (get-int-bytes(check-string x))))]
+[(list 'apply) 112]
+[(list 'ret) 113]
+[(list 'dbg) 114]
+[(list 'dbgl) 115]
+[(list 'getraw) 116]
+[(list 'fork) 117]
+[(list 'join) 118]
+[(list 'cons) 119]
+[(list 'head) 120]
+[(list 'tail) 121]
+[(list 'islist) 122]
+[(list 'createlist) 123]
+[(list 'isfunc) 124]
                 ))))
 
 (define (assemble opcodes)
@@ -446,6 +461,9 @@
              #:with ident head-sym
              #:with [prop ...] (cdr split)             
              ))
+
+
+  
   (define-syntax-class prop-exists-accessor
     #:description "property exists accessor"
     (pattern x:id
@@ -484,27 +502,33 @@
           ,(eval-arg msg)
           (say)))]))
 
-(define-syntax (list-len stx)
+(define-syntax (len stx)
   (syntax-parse stx
     [(_ lst)
      #'`((,(eval-arg lst)
           (len)
           ))]))
 
-(define-syntax (create-player-list stx)
+(define-syntax (create-player-arr stx)
   (syntax-parse stx
     [(_ var name items ... )
      #'`(
-         (createlist)   ;create new list on stack
+         (createarr)   ;create new list on stack
          ,(set-prop var name)
          ; now for each item, load the list and append
          ((,(get-prop var name)
            (ldvals items)
-           (appendlist)) ...)
+           (appendarr)) ...)
          )]))
 
 (define-syntax-parser is-list?
   [(_ arg) #'`(,(eval-arg arg) (islist))])
+
+(define-syntax-parser is-func?
+  [(_ arg) #'`(,(eval-arg arg) (isfunc))])
+
+(define-syntax-parser is-arr?
+  [(_ arg) #'`(,(eval-arg arg) (isarray))])
                       
 (define-syntax-parser is-location?
   [(_ arg) #'`(,(eval-arg arg) (isloc))])
@@ -575,14 +599,12 @@
      (with-syntax*
        ([label (new-label)]
         [continue (new-label)]
-        [idx (if (syntax-e #'ind)
-                 
+        [idx (if (syntax-e #'ind)                 
                  #'ind.name
                  (new-var))]
         [break (if (syntax-e #'break-expr)
                    #'`(,(eval-arg break-expr)
-                       (ldvalb #t)
-                       (beq continue))
+                       (bt continue))
                    #'`())]
                             
         [start
@@ -616,26 +638,9 @@
        #'(start break exprs ... end))]))
 
 
-
-(define-syntax-parser pop-scoped-stack
-  [(_ )
-   (pop-scoped-stack)
-   #''()])
-
-(define-syntax-parser push-scoped-stack
-  [(_)
-   (push-scoped-stack)
-   #'`()])
-  
-(define-syntax (push-binding stx)
-  (syntax-parse stx
-    [(_ id)
-     (add-scoped-binding #'id stx)
-  #'`(())]))
-    
 (define-syntax (for-reverse stx)
   (syntax-parse stx
-    [(_ (var list-expr) exprs ...)
+    [(_ (var:binding list-expr) exprs ...)
      (with-syntax*
        ([label (new-label)]
         [continue (new-label)]
@@ -664,8 +669,30 @@
              (bne label)
              (continue)
              (pop)
+             ,(pop-scoped-stack)
              )])
+       (push-scoped-stack)
+       (add-scoped-binding #'var.name stx)
        #'(start  exprs ... end))]))
+
+(define-syntax-parser pop-scoped-stack
+  [(_ )
+   (pop-scoped-stack)
+   #''()])
+
+(define-syntax-parser push-scoped-stack
+  [(_)
+   (push-scoped-stack)
+   #'`()])
+  
+(define-syntax (push-binding stx)
+  (syntax-parse stx
+    [(_ id)
+     (add-scoped-binding #'id stx)
+  #'`(())]))
+
+        
+
 
 
 (define-syntax (try-get-prop stx)
@@ -690,6 +717,7 @@
      #'`(,(eval-arg obj)
          (,(eval-arg key)
            (ldprop)) ...)]))
+
 
 (define-syntax (del-prop stx)
   (syntax-parse stx
@@ -792,6 +820,7 @@
          (p_stprop))]))
          
 (define-syntax (def stx)
+
   (syntax-parse stx
     [(_ (names ...) expr )
      ;tuple extraction
@@ -803,6 +832,7 @@
              (with-syntax
                ([prop-name (string-append "item" (~a i))]
                 [arg-name (symbol->string s)])
+               (add-scoped-binding #'arg-name stx)
                #'((ldvals prop-name)
                   (p_ldprop)
                   (stvar arg-name))))])
@@ -818,14 +848,12 @@
        ,(eval-arg expr)
        (stvar id.name)))]))
 
-(define-syntax (new-list stx)
-  (syntax-parse stx
-    [(_ exprs ... ) #''((createlist))]))
 
 (define-syntax-parser eval-arg
-;  (wdb "eval arg ~a" this-syntax)
+ 
   [(_ id:prop-accessor)
    #'(get-prop id.ident id.prop ...)]
+
   [(_ id:prop-exists-accessor)
    #'(try-get-prop id.ident id.prop ...)]
   [(_ id:scoped-binding)   
@@ -846,17 +874,17 @@
    ;otherwise evaluate it
    #'`,expr ])
 
-(define-syntax-parser append-list
+(define-syntax-parser append-arr
   [(_ var exprs ... )
    #'`(((,(eval-arg var)
          ,(eval-arg exprs)
-         (appendlist)) ...))])
+         (appendarr)) ...))])
 
-(define-syntax-parser prepend-list
+(define-syntax-parser prepend-arr
   [(_ var exprs ... )
    #'`(((,(eval-arg var)
          ,(eval-arg exprs)
-         (prependlist)) ...))])
+         (prependarr)) ...))])
 
 (define-syntax-parser keys 
   [(_ expr)
@@ -868,13 +896,38 @@
    #'`(,(eval-arg expr)
          (values))])
          
-(define-syntax-parser s-list  
-  [(_) #''(createlist)]
+(define-syntax-parser arr
+  [(_) #''(createarr)]
   [(_ expr ...)
-   #'`((createlist)
+   #'`((createarr)
        ((,(eval-arg expr)
-         (p_appendlist)) ...)
+         (p_appendarr)) ...)
        )]) 
+
+(define-syntax-parser s-list
+  [(_) #''(createlist)]
+  [(_ head)
+   #'`(,(s-cons head (s-list)))]
+  [(_ item items ...)
+   #'`(,(s-cons item (s-list items ...)))])
+       
+
+(define-syntax-parser s-cons
+  [(_ head tail)
+   #'`(
+       ,(eval-arg tail)
+       ,(eval-arg head)
+       (cons))])
+
+(define-syntax-parser head
+  [(_ lst)
+   #'`(,(eval-arg lst)
+       (head))])
+
+(define-syntax-parser tail
+  [(_ lst)
+   #'`(,(eval-arg lst)
+       (tail))])
 
 (define-syntax-parser def-obj
   [(_ id:binding)
@@ -938,6 +991,12 @@
           (def id expr) ...          
           body ... )])
 
+(define-syntax-parser get-raw
+  [(_ client )
+   #'`(,(eval-arg client)
+       (getraw))])
+   
+
 (define-syntax-parser def-flow
   [(_ name:binding title)
    (add-scoped-binding #'name.name this-syntax)
@@ -961,6 +1020,8 @@
   (define-splicing-syntax-class flow-clauses
     [pattern {~seq [eq-expr case-title-expr true-expr] ...}
              #:with [n ...] (map ~a (range (length (attribute eq-expr))))]))
+
+
 
 (define-syntax-parser flow
   [(_ client title-expr (expr:flow-clauses))
@@ -994,12 +1055,20 @@
        ,(eval-arg client)
        (suspend))])
 
+(define-syntax-parser fork
+  [(_ func arg)
+   #'`(,(eval-arg func)
+       ,(eval-arg arg)
+       (fork))])
 
-(define-syntax-parser remove-list
+(define-syntax-parser join
+  [(_) #'`(join)])
+   
+(define-syntax-parser remove-arr
   [(_ var key)
    #'`(,(eval-arg var)
        ,(eval-arg key)
-       (removelist))])
+       (removearr))])
 
 (define-syntax-parser remove-uni
   [(_ var)
@@ -1066,10 +1135,18 @@
 
 (define-syntax (nth stx)
   (syntax-parse stx
-    [(_ n lst)
+    [(_ lst n)
      #'`(,(eval-arg lst)
          ,(eval-arg n)
          (index))]))
+
+(define-syntax (set-nth stx)
+  (syntax-parse stx
+    [(_ lst n val)
+     #'`(,(eval-arg lst)
+         ,(eval-arg n)
+         ,(eval-arg val)
+         (setindex))]))
 
 (define-syntax (dbg stx)
   (syntax-parse stx
@@ -1101,23 +1178,24 @@
 
 (define-syntax (s-unless stx)
   (syntax-parse stx
-    [(_ expr true-expr)
+    [(_ expr true-expr ...)
      (with-syntax ([label (new-label)])
        #'`((,(eval-arg expr)
-            (ldvalb 1)
-            (beq label)
-            ,(eval-arg true-expr)
+            (bt label)
+            (,(eval-arg true-expr) ...)
             (label))))]))
 
 (define-syntax (s-when stx)
   (syntax-parse stx
     [(_ expr true-expr ...)
      (with-syntax ([label (new-label)])
-       #'`((,(eval-arg expr)
-            (ldvalb 0)
-            (beq label)
+       #'`(;(pushscope)
+           (,(eval-arg expr)
+            (bf label)
             ,(eval-arg true-expr) ...
-            (label))))]))
+            (label))
+           ;(popscope)
+           ))]))
 
 (define-syntax (s-while stx)
   (syntax-parse stx
@@ -1127,8 +1205,7 @@
        #'`(((pushscope)
             (start)
             ,(eval-arg cond-expr)
-            (ldvalb 0)
-            (beq end)
+            (bf end)
             ,(eval-arg body-expr) ...
             (branch start)
             (end)
@@ -1182,16 +1259,61 @@
   (syntax-parse stx
     [(_ left right ...)
      #'`(,(eval-arg left)
-
          ((,(eval-arg right)
            (add)) ...))]))
+
+(define-syntax (mul stx)
+  (syntax-parse stx
+    [(_ left right ...)
+     #'`(,(eval-arg left)
+         ((,(eval-arg right)
+           (mul)) ...))]))
+
+(define-syntax (mod stx)
+  (syntax-parse stx
+    [(_ left right )
+     #'`(,(eval-arg right)
+         ,(eval-arg left)
+          (mod))]))
+
+(define-syntax (div stx)
+  (syntax-parse stx
+    [(_ left right )
+     #'`(,(eval-arg right)
+         ,(eval-arg left) 
+           (div))]))
+
+(define-syntax (neg stx)
+  (syntax-parse stx
+    [(_ val)
+     #'`(,(eval-arg val)
+         (neg))]))
+
+(define-syntax (->int stx)
+  (syntax-parse stx
+    [(_ val)
+     #'`(,(eval-arg val)
+         (toint))]))
+
+(define-syntax (->str stx)
+  (syntax-parse stx
+    [(_ val)
+     #'`(,(eval-arg val)
+         (tostr))]))
 
 (define-syntax (sub stx)
   (syntax-parse stx
     [(_ left right)
-     #'`(,(eval-arg left)
-         ,(eval-arg right)
+     #'`(,(eval-arg right)
+         ,(eval-arg left)
          (sub))]))
+
+(define-syntax (pow stx)
+  (syntax-parse stx
+    [(_ left right)
+     #'`(,(eval-arg right)
+         ,(eval-arg left)
+         (pow))]))
 
 (define-syntax (starts-with stx)
   (syntax-parse stx
@@ -1266,8 +1388,7 @@
         [end (new-label)]
         [(cases ...)
          #'`((,(eval-arg expr)
-              (ldvalb 1)
-              (beq when-true))...)]) 
+              (bt when-true))...)]) 
        #'`(,(cases ...)
            ;push false on the stack
            (ldvalb 0)
@@ -1284,8 +1405,7 @@
       [end (new-label)]
       [(cases ...)
        #'`((,(eval-arg expr)
-            (ldvalb 0)
-            (beq when-false))...)])
+            (bf when-false))...)])
      #'`(,(cases ...)
          (ldvalb 1)
          (branch end)
@@ -1297,8 +1417,7 @@
      (with-syntax ([true-label (new-label)]
                    [end (new-label)])
      #'`(,(eval-arg expr)
-         (ldvalb 1)
-         (beq true-label)
+         (bt true-label)
          (ldvalb 1)
          (branch end)
          (true-label)
@@ -1350,8 +1469,7 @@
          ,(eval-arg key-expr)
          (p_stvar x)
          (p_contains)
-         (ldvalb 0)
-         (beq f-end)
+         (bf f-end)
          (ldvar x)
          (ldprop)
          ,(eval-arg val-expr)
@@ -1474,7 +1592,7 @@
 
 (define-syntax (-- stx)
   (syntax-parse stx
-    [(_ var)  #'(set-var var (sub 1 var))]))
+    [(_ var)  #'(set-var var (sub var 1))]))
 
 (define-syntax-parser ~
   [(_ f args ...)
@@ -1609,13 +1727,16 @@
        ,(eval-arg bottom)
        (splitat))])
 
-(define-syntax-parser pop-list
+(define-syntax-parser pop-arr
   [(_ inputs)
    #'`(,(eval-arg inputs)
        (p_len)
        (dec)
        (ldvalb 0)
-       (splitat))])
+       (splitat)
+       (ldval 0)
+       (index)
+       )])
 
 (define-syntax-parser assert
   [(_ condition msg ... )
@@ -1639,6 +1760,8 @@
        ,(eval-arg prop)
        (syncprop))])
 
+
+
 (define-syntax-parser s-case #:datum-literals (else)
   [(_ test [val expr ...] ...+
       [else else-expr ...])
@@ -1646,7 +1769,7 @@
          [(eq test val)
           (s-begin expr ...)] ...
           [else else-expr ... ]))]   
-    [(_ test [val expr ...] ... )
+   [(_ test [val expr ...] ... )
    #'`(,(s-cond
          [(eq test val)
           (s-begin expr ...)] ...))])
@@ -1654,16 +1777,20 @@
 
 (define-syntax (app stx)
   (syntax-parse stx
-    #:datum-literals (<- != = += -= < <= > >= ++ -- in)
-
+    #:datum-literals (<- != / + - = * *= += -= < <= > >= ++ -- ^ % in)
     [(_ f:prop-accessor ++ )
      #'(prop+= f.ident f.prop ... 1)]
     [(_ f:prop-accessor -- )
      #'(prop-= f.ident f.prop ... 1)]
     [(_ f:prop-accessor += val)
      #'(prop+= f.ident f.prop ... val)]
+
     [(_ f:scoped-binding += val)
      #'(set-var f (add f val))]
+    [(_ f:scoped-binding -= val)
+     #'(set-var f (sub f val))]
+    [(_ f:scoped-binding *= val)
+     #'(set-var f (mul f val))]
     [(_ f:prop-accessor -= val)
        #'(prop-= f.ident f.prop ... val)]
     [(_ f:prop-accessor = val)
@@ -1672,6 +1799,7 @@
      #'(set-prop f.ident f.prop ... val)]
     [(_ f:scoped-binding <- val)
      #'(set-var f val)]    
+    
     [(_ (~or f:prop-accessor f:scoped-binding) < val)
      #'(lt f val)]
     [(_ (~or f:prop-accessor f:scoped-binding) > val)
@@ -1684,16 +1812,68 @@
      #'(ne f val) ]
     [(_ val ++)
      #'(++ val)]
+    [(_ val --)
+     #'(-- val)]
+    [(_ f > val)
+     #'(gt f val)]
+    [(_ f >= val)
+     #'(gte f val)]
+    [(_ f < val)
+     #'(lt f val)]
+    [(_ f <= val)
+     #'(lte f val)]
+    [(_ f != val)
+     #'(ne f val)]
     [(_ f = val)
-     #'(eq f val)]    
+     #'(eq f val)]
+    [(_ f + val)
+     #'(add f val)]    
+    [(_ f - val)
+     #'(sub f val)]
+    [(_ f / val)
+     #'(div f val)]
+    [(_ f * val)
+     #'(mul f val)]
+    [(_ f % val)
+     #'(mod f val)]    
+    [(_ f ^ val)
+     #'(pow f val)]    
+    [(_ f in val)
+     #'(contains val f)]
     ; process everything else as scurry function app
     [(app f a ...+)
      #'(~ f  a ...)]
     [(app f)
      ;since we don't support unit we just "sugar" a
-     ;call with no args with #f same as the def-λ
-     #'(~ f #f)]
+     ;call by applying it to itself
+     #'(~ f f)]
     ))
 
 
 
+;; (define-syntax (match-x stx)
+;;   (define-splicing-syntax-class numbered-items #:datum-literals (list)
+;;     [pattern {~seq  eq-expr ...}
+;;              #:with [n ...]  (range (length (attribute eq-expr)))
+;;              #:with [o ...] #'(eq-expr ...)]
+    
+;;     )
+
+;;   (define-syntax-class match-exp
+;;     (pattern (~or (~and x:id (~bind [new-ex #'(def x 0)])))))
+  
+  
+;;   (syntax-parse stx
+;;     #:datum-literals (list)
+;;     [(_ expr [(list item:numbered-items ) result-expr])
+;;      (with-syntax ([(ints) (syntax->list #'(item ...))])
+;;        #'(dbgl ints
+;; ))]
+    
+     
+
+;;     ;; [(_ expr [m:match-exp result-expr]  )
+;;     ;;  #'((begin m.new-ex
+;;     ;;            result-expr))]
+
+;;     ))

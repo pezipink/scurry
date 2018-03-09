@@ -154,8 +154,7 @@
 (define-syntax (outlive-data stx)
   #'(begin
       (def leaders
-        (list
-         (create-leader "Wilson Fyre - Hunter" 44
+        (list         (create-leader "Wilson Fyre - Hunter" 44
            (list blackwood silent-peak cargo-ship mine) (list meat meat)  shotgun)
          (create-leader "Erin McCarthy - Dowser" 17
            (list dam blackwood silent-peak cargo-ship)  (list water water) jerrycan)

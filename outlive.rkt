@@ -100,12 +100,13 @@
    (def counts (create-obj))
    (for (c cost-types)
      (unless (contains counts c)
-       (counts.c <- 0))
-     (counts.c += 1))
+       (set-prop counts c 0))
+     (prop+= counts c 1))
    (def total
      (fold (keys counts) 0
            (λ (acc c)
-              (add acc (min (get-prop counts c) (get-prop shelter c))))))
+             (add acc (min (get-prop counts c) (get-prop shelter c))))))
+   (dbgl "exit ")
    (gte total amount))
       
  (def-λ (shelter-has-enough shelter cost-type amount)
@@ -134,8 +135,8 @@
    (~>
    player-state.shelter.stuff 
    (filter (λ (and (_.type = "room") (_.state = "unbuilt"))))
-    (filter (λ (shelter-has-enough
-                player-state.shelter "materials" (cost-modifier _))))))
+   (filter (λ (shelter-has-enough
+               player-state.shelter "materials" (cost-modifier _))))))
 
  (def-λ (get-fixing-actions player-state cost-modifier)
    (dbgl "in get fixing actions")
@@ -244,6 +245,7 @@
 
    (def-λ (choose-leader leader)
      (shelter.leader <- leader)
+     (dbgl "leader " leader.name " was chosen")
      (for (r leader.resources)
        (case r
          [blackwood-tile (dbgl blackwood-tile)]
@@ -259,6 +261,10 @@
            (append-list shelter.stuff equip)))
      
      (def locations (clone-list leader.starting-locations))
+     (dbgl "the starting locations for leader " leader.name " are ")
+     (for (l locations)
+       (dbgl l))
+     
      (for (h p.heroes)
        (flow-end)
        (def title (add "Select a starting location for your strength " h.strength " hero."))
@@ -310,7 +316,7 @@
    ; todo: this can be done concurrently for each player   
    (dbgl "process-night")
    (for (p players)
-     (dbg-obj p.shelter)
+    (dbg-obj p.shelter)
      (p.phase <- phase-night-1)
      ; collect any available actions from rooms and equipment
      ; that apply to this phase

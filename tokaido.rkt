@@ -100,7 +100,7 @@
      (when (gt coins 0)
        (flow clientid "donate to the temple"
          ([#t           "1 coin"  (coins->temple 1)]
-          [(gt coins 1) "2 coins" (coins->temple 2)]
+          [(coins > 1) "2 coins" (coins->temple 2)]
           [(gt coins 2) "3 coins" (coins->temple 3)]
           [#t           "do not donate" '()]))
        (flow-end))))
@@ -119,6 +119,12 @@
       (enter-hot-spring player)]
      [(eq _ "village") _
       (enter-village player)])))
+
+
+
+
+      
+     
 
  (def-λ (setup-player player)
    ;each player has a location keyed by their name
@@ -229,7 +235,7 @@
 
      ))
    (set-prop temple (add p.clientid "-coins") 0)
-   ;; (dbgl "player has " (get-prop p "coins"))
+   ;; (Dbgl "player has " (get-prop p "coins"))
    ;; (foreach (f (get-global "on-enter"))          
    ;;          (~ f p temple))
    ;; (dbgl "player now has " (get-prop p "coins"))
