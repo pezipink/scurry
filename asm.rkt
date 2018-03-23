@@ -965,6 +965,12 @@
   [(_ l) #'`(,(eval-arg l)
                (shuffle))])
 
+(begin-for-syntax
+  (define-splicing-syntax-class kvp-seq
+    [pattern {~seq key value }
+             ]))
+
+
 (define-syntax (create-obj stx)
   (syntax-parse stx
     [(_)
@@ -975,7 +981,15 @@
          ((,(eval-arg key)
            ,(eval-arg value)
            (p_stprop))...)           
-         )]))
+         )]
+    ;must be balanced. used from { } literals.
+    [(_ kvps:kvp-seq ... )
+     #'`((createobj)
+         ((,(eval-arg kvps.key)
+           ,(eval-arg kvps.value)
+           (p_stprop))... )           
+         )]
+    ))
 
 (define-syntax (move-obj stx)
   (syntax-parse stx    
@@ -1778,6 +1792,17 @@
 (define-syntax (app stx)
   (syntax-parse stx
     #:datum-literals (<- != / + - = * *= += -= < <= > >= ++ -- ^ % in)
+
+    [(_ x:expr ... ) #:when (eq? (syntax-property stx 'paren-shape) #\{)
+     ;; (define stxs (syntax->list #'(x ...)))
+     ;; (unless (zero? (remainder (length stxs) 2))
+     ;;   (raise-syntax-error
+     ;;    '|[ ]|
+     ;;    "expected even number of keys and values in object literal"
+     ;;    #'(x ...)
+     ;;    (last stxs)))
+     #'(create-obj x ...)]
+    
     [(_ f:prop-accessor ++ )
      #'(prop+= f.ident f.prop ... 1)]
     [(_ f:prop-accessor -- )
@@ -1849,31 +1874,3 @@
      #'(~ f f)]
     ))
 
-
-
-;; (define-syntax (match-x stx)
-;;   (define-splicing-syntax-class numbered-items #:datum-literals (list)
-;;     [pattern {~seq  eq-expr ...}
-;;              #:with [n ...]  (range (length (attribute eq-expr)))
-;;              #:with [o ...] #'(eq-expr ...)]
-    
-;;     )
-
-;;   (define-syntax-class match-exp
-;;     (pattern (~or (~and x:id (~bind [new-ex #'(def x 0)])))))
-  
-  
-;;   (syntax-parse stx
-;;     #:datum-literals (list)
-;;     [(_ expr [(list item:numbered-items ) result-expr])
-;;      (with-syntax ([(ints) (syntax->list #'(item ...))])
-;;        #'(dbgl ints
-;; ))]
-    
-     
-
-;;     ;; [(_ expr [m:match-exp result-expr]  )
-;;     ;;  #'((begin m.new-ex
-;;     ;;            result-expr))]
-
-;;     ))
