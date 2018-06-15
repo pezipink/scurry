@@ -609,6 +609,7 @@
                             
         [start
          #'`(
+             (pushscope)
              ,(eval-arg list-expr)
              ;test there are items otherwise skip
              (p_len)
@@ -629,6 +630,7 @@
              (bne label)
              (continue)
              (pop)
+             (popscope)
              ,(pop-scoped-stack)
              )])
        (push-scoped-stack)
@@ -1118,16 +1120,29 @@
          (p_setlocparent))]
     ))
 
-(define-syntax (link-location stx)
+(define-syntax (link-location-sibling stx)
   (syntax-parse stx
-    [(_ host new-sibling ([key value]...))
+    [(_ host new-sibling sibling-key ([key value]...))
      #'`(,(eval-arg host)
          ,(eval-arg new-sibling)         
          (genlocref)         
          ((,(eval-arg key)
            ,(eval-arg value)
-           (p_stprop))...)           
+           (p_stprop))...)
+         ,(eval-arg sibling-key)
          (setlocsibling))]))
+
+(define-syntax (link-location-child stx)
+  (syntax-parse stx
+    [(_ parent child child-key ([key value]...))
+     #'`(,(eval-arg parent)
+         ,(eval-arg child)         
+         (genlocref)         
+         ((,(eval-arg key)
+           ,(eval-arg value)
+           (p_stprop))...)
+         ,(eval-arg child-key)
+         (setlocchild))]))
 
 (define-syntax (get-siblings stx)
   (syntax-parse stx
@@ -1194,10 +1209,12 @@
   (syntax-parse stx
     [(_ expr true-expr ...)
      (with-syntax ([label (new-label)])
-       #'`((,(eval-arg expr)
+       #'`(((pushscope)
+            ,(eval-arg expr)
             (bt label)
             (,(eval-arg true-expr) ...)
-            (label))))]))
+            (label)
+            (popscope))))]))
 
 (define-syntax (s-when stx)
   (syntax-parse stx

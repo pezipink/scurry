@@ -31,7 +31,7 @@
        (for (i inputs) (f i)))
      
      (def-λ (map inputs mapper)
-       (def out (list))
+       (def out (arr))
        (for (i inputs)
          (append-arr out (mapper i)))
        (return out))
@@ -40,7 +40,12 @@
 
      (def-λ (clone-arr arr)
        (map arr id))
-     
+
+     (def-λ (clone-append-arr arr v)
+       (def out (clone-arr arr))
+       (append-arr out v)
+       (return out))
+       
      (def-λ (filter inputs pred)
        (def out (arr))
        (for (i inputs)
@@ -184,13 +189,13 @@
          (return x)
          (return y)))
 
-     (def-λ (max-list inputs)
+     (def-λ (max-arr inputs)
        (fold inputs
              (nth inputs 0)
              (λ (acc n)
                (max acc n))))
 
-     (def-λ (binary-list->int input)
+     (def-λ (binary-arr->int input)
        (def i ((len input) - 1))
        (def res 0)
        (def p 0)
@@ -203,7 +208,7 @@
        (return res))
            
        
-     (def-λ (int->binary-list n)
+     (def-λ (int->binary-arr n)
        (if (n = 0)
            (arr 0 0 0 0 0 0 0 0)
            (begin
@@ -268,8 +273,9 @@
      (def-λ (dbg-obj obj)
        (for (k (keys obj))
          (dbgl k ":" (get-prop obj k))))
-     
-     (def-λ (flow-from-triple triples clientid title)
+
+     ;flow from triple
+     (def-λ (fft triples clientid title)
        (def-flow req title)       
        (def-obj result-map)       
        (for (t triples)
@@ -278,5 +284,8 @@
        (def res (flow req clientid))
        ((get-prop result-map res) res))
 
-     
+     (def-λ (map-flow items client title tripler)
+       (~> (map items tripler)  (fft client title)))
+
+
      ))

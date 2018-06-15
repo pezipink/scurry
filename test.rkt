@@ -6,7 +6,8 @@
 (require (for-syntax racket/set))
 (require (for-syntax racket/format))
 (require (for-syntax syntax/srcloc))
-;(require racket/match)
+(require racket/match racket/format
+         racket/string racket/vector)
 (require (for-syntax racket/list))
 (require racket/list)
 (require (for-syntax racket/match))
@@ -88,7 +89,7 @@
 
 (define reg
   (~>
-   (functor->register input)
+   (functor->register input3)
    ))
 
 (define (compile-program lists)
@@ -124,6 +125,9 @@
                   [else
                     (values
                      (hash-set seen l l)
+
+
+
                      (cons `((unify-variable ,(car (hash-ref reg (car l))))) prog))]
                      ))))
         ])
@@ -134,8 +138,60 @@
  reg
  (hash->list)
  (sort (λ (x y) (< (cddr x) (cddr y))))
- (filter (λ (x) (or (pair? (car x)) (char-lower-case? (string-ref (symbol->string (car x)) 0)))) _ )
+ (filter
+  (λ (x)
+    (or
+     (pair? (car x))
+     (char-lower-case? (string-ref (symbol->string (car x)) 0)))) _ )
  (compile-program))
+
+
+
+(define (query->bytecode data)
+  (let-values
+      ([(strings string-index code)
+       (for/fold ([strings (make-immutable-hash)]
+                  [string-index 0]
+                  [code (vector)])
+                 ([d data])
+         (match d
+           [(list 'put-structure name arity reg)
+            (let
+                ([reg-index (string->number (string-replace reg "X" ""))])
+              (values
+               (hash-set strings name (cons string-index arity))
+               (add1 string-index)
+               (vector-append code `#(0 ,string-index ,arity ,reg-index))))
+            ]
+           
+           [(list 'set-variable reg)
+            (let ([reg-index (string->number (string-replace reg "X" ""))])
+              (values
+               strings
+               string-index
+               (vector-append code `#(1 ,reg-index))))]))])
+    ;now we can write a c program
+    (wdb "memref s = hash_init(~a);" (hash-count strings))
+    (wdb "memref arity = hash_init(~a);" (hash-count strings))
+    (~>
+     strings
+     (hash->list)
+     (for-each
+      (λ (s)
+        (wdb "hash_set(s, int_to_memref(~a), ra_init_str(\"~a\"));"
+             (cadr s) (car s))
+        (wdb "hash_set(arity, int_to_memref(~a), int_to_memref(~a));"
+             (cadr s) (cddr s))) _))
+    
+    (wdb "int prog[~a] = { ~a };"
+         (vector-length code)
+         (~>
+          code
+          (vector->list)
+          (map (λ (x) (format "~a" x)) _)
+          (string-join ", ")))
+         
+))
 
 
 (~>
@@ -143,13 +199,32 @@
  (hash->list)
  (sort (λ (x y) (> (cddr x) (cddr y))))
  (filter (λ (x) (pair? (car x))) _ )
- (append-map
-  (λ (x)
-    (cons `(put-structure ,(car (hash-ref reg (car x))))
-          (append-map
-           (λ (y)
-             `((set-variable ,(car (hash-ref reg y))))) (cdar x) ))) _))
+ (foldl
+  (λ (x acc)
+     (let*
+        ([arity (- (length (car x)) 1)]
+         [name (format "~a/~a" (symbol->string (caar x)) arity)])
+       (cons `(put-structure ,name ,arity  ,(car (hash-ref reg (car x))))    
+
+             acc
+
+          ) (make-immutable-hash) _)
+ 
+ (query->bytecode
+))
     
+;; (append-map
+;;   (λ (x)
+;;     (let*
+;;         ([arity (- (length (car x)) 1)]
+;;          [name (format "~a/~a" (symbol->string (caar x)) arity)])
+;;     (cons `(put-structure ,name ,arity  ,(car (hash-ref reg (car x))))
+;;           (append-map
+;;            (λ (y)
+;;              `((set-variable ,(car (hash-ref reg y))))) (cdar x) )))) _)
+
+
+
 
 
 
@@ -167,13 +242,9 @@
     ;;   (values out temp i)))
       
     
-    
-  
 
 (define-syntax-rule (do-print x ...)
     (printf x ...))
-
-
 
 (define-syntax (namespace stx)
   (syntax-parse stx
@@ -190,9 +261,6 @@
          (display "\r\n" out)
          (close-output-port out)
         (datum->syntax stx e)))]))
-;     #'(begin x ...))]))
-
-
 
 (define-syntax (add stx)
   (syntax-parse stx
@@ -364,3 +432,4 @@
 ;;        env])))
 
 ;; (test (list 1 2 3))
+

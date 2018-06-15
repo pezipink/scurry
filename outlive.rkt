@@ -13,10 +13,10 @@
 
  (def-λ (expand-cost-type cost-type)   
    (case cost-type
-     [resources (list wood metal microchips ammo)]
-     [materials (list wood metal microchips)]
-     [supplies  (list meat water canned-goods)]
-     [else (list cost-type)]))
+     [resources (arr wood metal microchips ammo)]
+     [materials (arr wood metal microchips)]
+     [supplies  (arr meat water canned-goods)]
+     [else (arr cost-type)]))
       
  (def-λ (pay-survivors player-state amount)
    ; survivors can be taken from rooms with workers or the airlock
@@ -24,11 +24,11 @@
    (while (lt paid amount)
      (def rooms
        (~>
-        (list player-state.shelter.airlock)
+        (arr player-state.shelter.airlock)
         (append-many (filter player-state.stuff (λ (_.type = "room"))))
         (filter (λ (_.workers > 0)))))
 
-     (if (eq (list-len rooms) 0)
+     (if (eq (len rooms) 0)
          (begin
            (dbgl "no more survivors!")
            (paid <- amount)) 
@@ -52,7 +52,7 @@
    ; can pick n combination of them as relevant.
    (dbgl "in pay-cost-specific " cost-types " "  amount)
    (def shelter player-state.shelter)
-   (if (eq (list-len cost-types)  amount)
+   (if (eq (arr cost-types)  amount)
        (begin
          (for (c cost-types)
            (prop-= shelter c 1)))
@@ -174,23 +174,23 @@
      [ammo 30]
      [survivors 100])))
  (global.phase <- phase-dawn)
- (global.events <- (list))
+ (global.events <- (arr))
  (global.locations <-
    (create-obj
-    ([dam           (create-map-location dam (list forest military-base))]
-     [forest        (create-map-location forest (list dam blackwood))]
-     [blackwood     (create-map-location blackwood (list forest fair))]
-     [fair          (create-map-location fair (list blackwood cargo-ship))]
-     [cargo-ship    (create-map-location cargo-ship (list fair mine))]
-     [mine          (create-map-location mine (list cargo-ship silent-peak))]
-     [silent-peak   (create-map-location silent-peak (list mine military-base))]
-     [military-base (create-map-location military-base (list silent-peak dam))])))
- (global.equipment <- (list))
+    ([dam           (create-map-location dam (arr forest military-base))]
+     [forest        (create-map-location forest (arr dam blackwood))]
+     [blackwood     (create-map-location blackwood (arr forest fair))]
+     [fair          (create-map-location fair (arr blackwood cargo-ship))]
+     [cargo-ship    (create-map-location cargo-ship (arr fair mine))]
+     [mine          (create-map-location mine (arr cargo-ship silent-peak))]
+     [silent-peak   (create-map-location silent-peak (arr mine military-base))]
+     [military-base (create-map-location military-base (arr silent-peak dam))])))
+ (global.equipment <- (arr))
  
  ;each piece of equipment exists twice
  (for (e equipment-prototypes)
-   (append-list global.equipment (clone-obj e))
-   (append-list global.equipment (clone-obj e)))
+   (append-arr global.equipment (clone-obj e))
+   (append-arr global.equipment (clone-obj e)))
  
  ; initial object setup
  (for (p players)
@@ -232,7 +232,7 @@
      (["shelter" shelter]
       ["phase" phase-day-2]
       ["heroes"
-        (list
+        (arr
          (create-hero "" 3)
          (create-hero "" 3)
          (create-hero "" 4)
@@ -257,10 +257,10 @@
          (begin (dbgl "could not find equipment " leader.equipment)
                 'brk)
          (begin
-           (remove-list global.equipment equip)
-           (append-list shelter.stuff equip)))
+           (remove-arr global.equipment equip)
+           (append-arr shelter.stuff equip)))
      
-     (def locations (clone-list leader.starting-locations))
+     (def locations (clone-arr leader.starting-locations))
      (dbgl "the starting locations for leader " leader.name " are ")
      (for (l locations)
        (dbgl l))
@@ -274,7 +274,7 @@
                (tuple loc loc
                  (λ (begin
                       (h.location <- _)
-                      (remove-list locations _))))))
+                      (remove-arr locations _))))))
         (flow-from-triple p.clientid title))))
      
    (~>
@@ -366,14 +366,14 @@
          [phase-night-6
           (dbgl "\t\tfix equipment")
           (~>
-           (get-fixing-actions p (λ (return (list-len _.cost))))
+           (get-fixing-actions p (λ (return (len _.cost))))
            (map (λ (equip)
              (tuple
               equip.name
               (add "Fix : " equip.desc " for cost " )
               (λ (begin
                    (dbgl "player chose " _)
-                   (fix-equipment p equip (λ (return (list-len equip.cost)))))))))
+                   (fix-equipment p equip (λ (return (len equip.cost)))))))))
 
            (append-many stuff)
            
@@ -416,4 +416,6 @@
  'brk
  (dbgl "end")
 )
+
+
 

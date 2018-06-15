@@ -9,10 +9,10 @@
   [(_ name connections)
    #'(create-obj
       (["name" name]
-       ["heroes" (list)]
+       ["heroes" (arr)]
        ["resources" 0]
        ["connections" connections]
-       ["equipment" (list)]
+       ["equipment" (arr)]
        ["prey" 0]))])
 
 (define-syntax-parser create-room
@@ -89,7 +89,7 @@
 ;    * shelter data (see below)
 ;    * player's phase (will allow concurrent night phase later)
 ;    * available stuff to use (rooms, equip)
-;    * hero data list (see below)
+;    * hero data arr (see below)
 ;    * current hero action data such as
 ;      - used actions
 ;      - last action result eg, search tile result,
@@ -154,29 +154,29 @@
 (define-syntax (outlive-data stx)
   #'(begin
       (def leaders
-        (list         (create-leader "Wilson Fyre - Hunter" 44
-           (list blackwood silent-peak cargo-ship mine) (list meat meat)  shotgun)
+        (arr         (create-leader "Wilson Fyre - Hunter" 44
+           (arr blackwood silent-peak cargo-ship mine) (arr meat meat)  shotgun)
          (create-leader "Erin McCarthy - Dowser" 17
-           (list dam blackwood silent-peak cargo-ship)  (list water water) jerrycan)
+           (arr dam blackwood silent-peak cargo-ship)  (arr water water) jerrycan)
          (create-leader "Lily-Rose Wely - Geek" 20
-           (list blackwood silent-peak fair mine) (list microchips microchips microchips) backpack)
+           (arr blackwood silent-peak fair mine) (arr microchips microchips microchips) backpack)
          (create-leader "Jacob Rowlett - Miner" 66
-           (list dam silent-peak cargo-ship fair) (list metal metal microchips) pickaxe)
+           (arr dam silent-peak cargo-ship fair) (arr metal metal microchips) pickaxe)
          (create-leader "Swifty Bingham - Engineer" 19
-           (list dam military-base cargo-ship fair) (list ammo microchips microchips) thermal-sensor)
+           (arr dam military-base cargo-ship fair) (arr ammo microchips microchips) thermal-sensor)
          (create-leader "Grayson Pigott - Brawler" 38
-           (list forest fair military-base fair mine) (list ammo ammo microchips) baseball-bat)
+           (arr forest fair military-base fair mine) (arr ammo ammo microchips) baseball-bat)
          (create-leader "Liza Valentine - Soldier" 25
-           (list military-base blackwood silent-peak cargo-ship) (list ammo ammo ammo ) ammunitions-kit)
+           (arr military-base blackwood silent-peak cargo-ship) (arr ammo ammo ammo ) ammunitions-kit)
          (create-leader "Solen Livrich - Prowler" 32
-           (list forest blackwood cargo-ship mine) (list canned-goods canned-goods) grappling-hook)
+           (arr forest blackwood cargo-ship mine) (arr canned-goods canned-goods) grappling-hook)
          (create-leader "Kooper Froste - Lumberjack" 51
-           (list forest military-base blackwood silent-peak) (list ammo wood wood) axe)
+           (arr forest military-base blackwood silent-peak) (arr ammo wood wood) axe)
          (create-leader "Mary Koolpepper - Police Officer" 23
-           (list forest blackwood cargo-ship mine) (list blackwood-tile blackwood-tile silent-peak-tile) flashlight)))
+           (arr forest blackwood cargo-ship mine) (arr blackwood-tile blackwood-tile silent-peak-tile) flashlight)))
          
       (def-λ (create-city-tiles)
-        (list holy-water survival-ration plank heap-of-metal household-appliance ammunition ammunition
+        (arr holy-water survival-ration plank heap-of-metal household-appliance ammunition ammunition
               seaweed-pills empty-cupboard empty-cupboard))
       
       (def-λ (create-airlock)
@@ -188,7 +188,7 @@
 
 
       (def-λ (create-starting-rooms)
-        (list
+        (arr
           (create-room
            "draw-equip-repair"
            "draw one equipment tile and repair for 1 materials less"
@@ -199,14 +199,14 @@
                (dbgl "draw-equip-reapir was selected")
                (~>
                 state
-                (get-fixing-actions (λ (return (sub 1 (list-len _.cost)))))
+                (get-fixing-actions (λ (return (sub 1 (len _.cost)))))
                 (map (λ (equip)
                        (tuple
                         equip.name
                         (add "Fix : " equip.desc " for cost -1 material" )
                         (λ (begin
                              (dbgl "player chose " _)
-                             (fix-equipment state equip (λ (return (sub 1 (list-len equip.cost))))))))))
+                             (fix-equipment state equip (λ (return (sub 1 (len equip.cost))))))))))
                 (flow-from-triple state.clientid "Fix an item (special")))))
 
           (create-room
@@ -233,11 +233,11 @@
       
 
       (def equipment-prototypes
-        (list
+        (arr
          (create-equipment
           axe
           "an axe (+2 wood from forest)"
-          (list wood metal metal)
+          (arr wood metal metal)
           ;have to collect one wood first
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
@@ -246,7 +246,7 @@
           "bow"
           "a bow (+1 food from forest)"
           ; applies when entering forest
-          (list wood wood metal)
+          (arr wood wood metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
@@ -254,14 +254,14 @@
           jerrycan
           "a jerrycan (+1 wood from dam)"
           ; have to collect one water first
-          (list wood metal metal)
+          (arr wood metal metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
          
          (create-equipment
           "access-card"
           "an access card (access the dam without the microchip cost)"
-          (list wood microchips metal)
+          (arr wood microchips metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
@@ -269,28 +269,28 @@
           ammunitions-kit
           "ammunitions kit (+2 ammo from military base)"
           ;collect one first
-          (list wood wood metal)
+          (arr wood wood metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           "crowbar"
           "a crowbar (2 free microchips from the military base)"
-          (list metal metal metal)
+          (arr metal metal metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           "chainsaw"
           "a chainsaw (2 free wood when entering a city)"
-          (list microchips microchips metal)
+          (arr microchips microchips metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           flashlight
           "a flashlight (gain one survivor to any room when entering a city)"
-          (list microchips microchips metal)
+          (arr microchips microchips metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
@@ -298,28 +298,28 @@
           pickaxe
           "a pickaxe (+2 metal from mine)"
           ;collect one first
-          (list wood wood metal)
+          (arr wood wood metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
          
          (create-equipment
           "purifier"
           "a water purifier (1 free water when entering the mine)"
-          (list metal microchips microchips)
+          (arr metal microchips microchips)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           grappling-hook
           "a grappling hook (allows you to access the next level of the cargo ship)"
-          (list wood metal microchips)
+          (arr wood metal microchips)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
          
          (create-equipment
           "hacksaw"
           "a hacksaw (2 free metal when enterting the cargo ship)"
-          (list wood metal microchips)
+          (arr wood metal microchips)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
@@ -327,56 +327,56 @@
           backpack
           "a backpack (+2 microchips from the fair)"
           ;collect first
-          (list wood wood wood)
+          (arr wood wood wood)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           "metal-detector"
           "a metal detector (1 free canned food when entering the fair)"
-          (list)
+          (arr)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           shotgun
           "a shotgun (+1 hunting strength)"
-          (list metal wood wood)
+          (arr metal wood wood)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           "bear-trap"
           "a bear trap (+1 hunting strength)"
-          (list wood metal metal)
+          (arr wood metal metal)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           baseball-bat
           "a baseball bat (+1 pressure)"
-          (list wood wood wood)
+          (arr wood wood wood)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           "battle-gear"
           "a set of battle gear (-2 pressure)"
-          (list wood microchips microchips)
+          (arr wood microchips microchips)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           "exoskeleton"
           "an exoskeleton (one hero has no movement distance limitation)"
-          (list)
+          (arr)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
 
          (create-equipment
           thermal-sensor
           "a thermal sensor (you can select a prey from the stack when hunting)"
-          (list)
+          (arr)
           (λ (this state) (return #t))
           (λ (this state) (dbgl "!")))
          
